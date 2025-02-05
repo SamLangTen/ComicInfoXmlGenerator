@@ -1,69 +1,98 @@
-from enum import Enum
+from dataclasses import dataclass, field
+from typing import List, Optional
+import xml.etree.ElementTree as ET
 
-ComicInfoYesNo = Enum("ComicInfoYesNo", ("Unknown", "No", "Yes"))
-
-ComicInfoManga = Enum("ComicInfoManga", ("Unknown",
-                      "No", "Yes", "YesAndRightToLeft"))
-
-ComicInfoAgeRating = Enum("ComicInfoAgeRating",
-                          ("Unknown", "AdultsOnly18Plus", "EarlyChildhood", "Everyone", "Everyone10Plus", "G", "KidsToAdults", "M", "MA15Plus", "Mature17Plus", "PG", "R18Plus", "RatingPending", "Teen", "X18Plus"))
-
-ComicPageType = Enum("ComicPageType", ("FrontCover", "InnerCover", "Roundup", "Story",
-                     "Advertisement", "Editorial", "Letters", "Preview", "BackCover", "Other", "Deleted"))
-
-
-class ComicInfo:
-
-    def __init__(self, filename, **kwargs):
-        self.filename = filename
-        self.title = kwargs.get("title", "")
-        self.series = kwargs.get("series", "")
-        self.number = kwargs.get("number", "")
-        self.count = kwargs.get("count", -1)
-        self.volume = kwargs.get("volume", -1)
-        self.alternate_series = kwargs.get("alternate_series", "")
-        self.alternate_number = kwargs.get("alternate_number", "")
-        self.alternate_count = kwargs.get("alternate_count", -1)
-        self.summary = kwargs.get("summary", "")
-        self.notes = kwargs.get("notes", "")
-        self.year = kwargs.get("year", -1)
-        self.month = kwargs.get("month", -1)
-        self.day = kwargs.get("day", -1)
-        self.writer = kwargs.get("writer", "")
-        self.penciller = kwargs.get("penciller", "")
-        self.inker = kwargs.get("inker", "")
-        self.colorist = kwargs.get("colorist", "")
-        self.letterer = kwargs.get("letterer", "")
-        self.cover_artist = kwargs.get("cover_artist", "")
-        self.editor = kwargs.get("editor", "")
-        self.publisher = kwargs.get("publisher", "")
-        self.imprint = kwargs.get("imprint", "")
-        self.genre = kwargs.get("genre", "")
-        self.web = kwargs.get("web", "")
-        self.page_count = kwargs.get("page_count", 0)
-        self.language_iso = kwargs.get("language_iso", "")
-        self.format = kwargs.get("format", "")
-        self.black_and_white = kwargs.get(
-            "black_and_white", ComicInfoYesNo.Unknown)
-        self.manga = kwargs.get("manga", ComicInfoManga.Unknown)
-        self.characters = kwargs.get("characters", "")
-        self.teams = kwargs.get("teams", "")
-        self.locations = kwargs.get("locations", "")
-        self.scan_information = kwargs.get("scan_information", "")
-        self.story_arc = kwargs.get("story_arc", "")
-        self.series_group = kwargs.get("series_group", "")
-        self.age_rating = kwargs.get("age_rating", ComicInfoAgeRating.Unknown)
-        self.pages = kwargs.get("pages", list())
-        self.community_rating = kwargs.get("community_rating", 0)
-
-
+@dataclass
 class ComicPageInfo:
-    def __init__(self, image, **kwargs):
-        self.image = image
-        self.story = kwargs.get("story", ComicPageType.Story)
-        self.double_page = kwargs.get("double_page", False)
-        self.image_size = kwargs.get("image_size", 0)
-        self.key = kwargs.get("key", "")
-        self.bookmark = kwargs.get("bookmark", "")
-        self.image_width = kwargs.get("image_width", -1)
-        self.image_height = kwargs.get("image_height", -1)
+    Image: int
+    Type: str = "Story"
+    DoublePage: bool = False
+    ImageSize: int = 0
+    Key: str = ""
+    Bookmark: str = ""
+    ImageWidth: int = -1
+    ImageHeight: int = -1
+
+    def to_xml(self) -> ET.Element:
+        page_elem = ET.Element("Page")
+        page_elem.set("Image", str(self.Image))
+        page_elem.set("Type", self.Type)
+        page_elem.set("DoublePage", str(self.DoublePage).lower())
+        page_elem.set("ImageSize", str(self.ImageSize))
+        page_elem.set("Key", self.Key)
+        page_elem.set("Bookmark", self.Bookmark)
+        page_elem.set("ImageWidth", str(self.ImageWidth))
+        page_elem.set("ImageHeight", str(self.ImageHeight))
+        return page_elem
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        return cls(
+            Image=int(element.get("Image", 0)),
+            Type=element.get("Type", "Story"),
+            DoublePage=element.get("DoublePage", "false") == "true",
+            ImageSize=int(element.get("ImageSize", 0)),
+            Key=element.get("Key", ""),
+            Bookmark=element.get("Bookmark", ""),
+            ImageWidth=int(element.get("ImageWidth", -1)),
+            ImageHeight=int(element.get("ImageHeight", -1)),
+        )
+
+@dataclass
+class ComicInfo:
+    Title: str = ""
+    Series: str = ""
+    Number: str = ""
+    Count: int = -1
+    Volume: int = -1
+    Summary: str = ""
+    Publisher: str = ""
+    Genre: str = ""
+    PageCount: int = 0
+    LanguageISO: str = ""
+    Pages: List[ComicPageInfo] = field(default_factory=list)
+
+    def to_xml(self) -> ET.Element:
+        root = ET.Element("ComicInfo")
+        ET.SubElement(root, "Title").text = self.Title
+        ET.SubElement(root, "Series").text = self.Series
+        ET.SubElement(root, "Number").text = self.Number
+        ET.SubElement(root, "Count").text = str(self.Count)
+        ET.SubElement(root, "Volume").text = str(self.Volume)
+        ET.SubElement(root, "Summary").text = self.Summary
+        ET.SubElement(root, "Publisher").text = self.Publisher
+        ET.SubElement(root, "Genre").text = self.Genre
+        ET.SubElement(root, "PageCount").text = str(self.PageCount)
+        ET.SubElement(root, "LanguageISO").text = self.LanguageISO
+
+        pages_elem = ET.SubElement(root, "Pages")
+        for page in self.Pages:
+            pages_elem.append(page.to_xml())
+
+        return root
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        return cls(
+            Title=element.findtext("Title", ""),
+            Series=element.findtext("Series", ""),
+            Number=element.findtext("Number", ""),
+            Count=int(element.findtext("Count", -1)),
+            Volume=int(element.findtext("Volume", -1)),
+            Summary=element.findtext("Summary", ""),
+            Publisher=element.findtext("Publisher", ""),
+            Genre=element.findtext("Genre", ""),
+            PageCount=int(element.findtext("PageCount", 0)),
+            LanguageISO=element.findtext("LanguageISO", ""),
+            Pages=[
+                ComicPageInfo.from_xml(page)
+                for page in element.find("Pages") or []
+            ],
+        )
+
+    def to_xml_string(self) -> str:
+        return ET.tostring(self.to_xml(), encoding="utf-8").decode("utf-8")
+
+    @classmethod
+    def from_xml_string(cls, xml_data: str):
+        return cls.from_xml(ET.fromstring(xml_data))
