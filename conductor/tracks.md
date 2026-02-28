@@ -1,1 +1,5 @@
-# Project Tracks\n\nThis file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.\n\n---\n\n- [x] **Track: Implement ComicInfo.xml generation and archive injection**\n  *Link: [./tracks/xml_gen_20260228/](./tracks/xml_gen_20260228/)*
+# Project Tracks
+
+This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
+
+---
