@@ -91,7 +91,7 @@ class ComicInfo:
             Year=int(element.findtext("Year", -1)),
             Pages=[
                 ComicPageInfo.from_xml(page)
-                for page in element.find("Pages") or []
+                for page in (element.find("Pages") if element.find("Pages") is not None else [])
             ],
         )
 
