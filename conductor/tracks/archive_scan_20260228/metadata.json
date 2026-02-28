@@ -1,0 +1,1 @@
+{\n  "track_id": "archive_scan_20260228",\n  "type": "feature",\n  "status": "new",\n  "created_at": "2026-02-28T12:00:00Z",\n  "updated_at": "2026-02-28T12:00:00Z",\n  "description": "Implement basic archive scanning and filename metadata extraction"\n}
