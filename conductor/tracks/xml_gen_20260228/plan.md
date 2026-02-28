@@ -15,5 +15,5 @@
 - [x] Task: Verify the injected XML can be read back from the archive. (95ce5b6)
     - [x] Write integration tests to scan an archive, extract metadata, generate XML, inject it, and then re-read it to confirm no data loss.
 
-## Phase 3: Final Verification
-- [~] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
+## Phase 3: Final Verification [checkpoint: f25d922]
+- [x] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
