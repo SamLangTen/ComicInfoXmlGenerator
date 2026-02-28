@@ -16,5 +16,5 @@
     - [x] Write tests verifying the mapping of extracted strings to `ComicInfo` attributes.
     - [x] Ensure proper type conversion (e.g., Year as an integer).
 
-## Phase 3: Final Verification
-- [~] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
+## Phase 3: Final Verification [checkpoint: 7b1b083]
+- [x] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
