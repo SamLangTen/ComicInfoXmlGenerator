@@ -101,3 +101,11 @@ class ComicInfo:
     @classmethod
     def from_xml_string(cls, xml_data: str):
         return cls.from_xml(ET.fromstring(xml_data))
+
+
+def write_comic_info_xml(comic: ComicInfo, file_path: str):
+    """Writes the ComicInfo object to an XML file at the specified path."""
+    xml_str = comic.to_xml_string()
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        f.write(xml_str)
