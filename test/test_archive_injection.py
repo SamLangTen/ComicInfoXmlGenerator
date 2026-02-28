@@ -27,5 +27,17 @@ class TestArchiveInjection(unittest.TestCase):
             xml_content = zf.read("ComicInfo.xml").decode("utf-8")
             self.assertIn("<Title>Archive Test</Title>", xml_content)
 
+    def test_inject_missing_file_raises_error(self):
+        comic = ComicInfo(Title="Archive Test")
+        with self.assertRaises(FileNotFoundError):
+            inject_comic_info_xml("non_existent_file.cbz", comic)
+
+    def test_inject_invalid_format_raises_error(self):
+        comic = ComicInfo(Title="Archive Test")
+        invalid_path = os.path.join(self.test_dir, "test.txt")
+        open(invalid_path, 'w').close()
+        with self.assertRaises(ValueError):
+            inject_comic_info_xml(invalid_path, comic)
+
 if __name__ == "__main__":
     unittest.main()
