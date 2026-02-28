@@ -51,6 +51,7 @@ class ComicInfo:
     PageCount: int = 0
     LanguageISO: str = ""
     Pages: List[ComicPageInfo] = field(default_factory=list)
+    path: Optional[str] = None
 
     def to_xml(self) -> ET.Element:
         root = ET.Element("ComicInfo")
