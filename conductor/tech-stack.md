@@ -13,5 +13,6 @@
 ## Future UI Layer (Target)
 - **Proposed: Dear PyGui or Custom Tkinter**: Since the project is in Python and requires a 'good UI' but aims for 'Clean & Minimalist', these libraries are strong candidates for future UI development.
 
-## Archive Handling (Target)
-- **Proposed: zipfile, tarfile, and rarfile**: Standard libraries and specialized modules for managing the target comic archive formats (CBZ, CBR, CB7).
+## Archive Handling
+- **zipfile (Standard Library)**: Used for robust metadata injection into CBZ archives.
+- **Proposed: tarfile and rarfile**: Future support for CBR and CB7 archive formats.
