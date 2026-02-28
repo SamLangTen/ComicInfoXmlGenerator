@@ -52,6 +52,7 @@ class ComicInfo:
     LanguageISO: str = ""
     Pages: List[ComicPageInfo] = field(default_factory=list)
     path: Optional[str] = None
+    Year: int = -1
 
     def to_xml(self) -> ET.Element:
         root = ET.Element("ComicInfo")
@@ -65,6 +66,8 @@ class ComicInfo:
         ET.SubElement(root, "Genre").text = self.Genre
         ET.SubElement(root, "PageCount").text = str(self.PageCount)
         ET.SubElement(root, "LanguageISO").text = self.LanguageISO
+        if self.Year != -1:
+            ET.SubElement(root, "Year").text = str(self.Year)
 
         pages_elem = ET.SubElement(root, "Pages")
         for page in self.Pages:
@@ -85,6 +88,7 @@ class ComicInfo:
             Genre=element.findtext("Genre", ""),
             PageCount=int(element.findtext("PageCount", 0)),
             LanguageISO=element.findtext("LanguageISO", ""),
+            Year=int(element.findtext("Year", -1)),
             Pages=[
                 ComicPageInfo.from_xml(page)
                 for page in element.find("Pages") or []

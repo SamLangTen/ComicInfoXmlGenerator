@@ -20,8 +20,7 @@ class FilenameScraper:
         # Extract Year
         match_year = self.re_year.search(basename)
         if match_year:
-            # We don't have Year in ComicInfo standard dataclass yet
-            pass
+            comic.Year = int(match_year.group(1))
             
         # Extract Volume
         match_volume = self.re_volume.search(basename)

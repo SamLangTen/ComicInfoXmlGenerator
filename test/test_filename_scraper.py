@@ -19,14 +19,14 @@ class TestFilenameScraper(unittest.TestCase):
         self.assertEqual(result.Series, "Amazing Spider-Man")
         self.assertEqual(result.Volume, 1)
         self.assertEqual(result.Number, "01")
-        # Assuming we add Year to ComicInfo later, or check if we store it
-        # For now let's focus on Series, Volume, Number
+        self.assertEqual(result.Year, 2024)
 
     def test_filename_with_year_and_no_volume(self):
         comic = ComicInfo(path="Batman (2020) #05.cbr")
         result = self.scraper.search(comic)
         self.assertEqual(result.Series, "Batman")
         self.assertEqual(result.Number, "05")
+        self.assertEqual(result.Year, 2020)
 
 if __name__ == "__main__":
     unittest.main()
