@@ -9,12 +9,12 @@
     - [x] Update `ComicInfo` to include a `path` attribute.
 
 ## Phase 2: Filename Metadata Extraction
-- [ ] Task: Refine `FilenameScraper` to extract Series, Volume, Issue, and Year.
-    - [ ] Write tests with multiple sample filenames covering common naming patterns.
-    - [ ] Implement robust regex in `FilenameScraper.search`.
-- [ ] Task: Map extracted metadata to `ComicInfo` fields.
-    - [ ] Write tests verifying the mapping of extracted strings to `ComicInfo` attributes.
-    - [ ] Ensure proper type conversion (e.g., Year as an integer).
+- [x] Task: Refine `FilenameScraper` to extract Series, Volume, Issue, and Year. (6cb6e61)
+    - [x] Write tests with multiple sample filenames covering common naming patterns.
+    - [x] Implement robust regex in `FilenameScraper.search`.
+- [x] Task: Map extracted metadata to `ComicInfo` fields. (2460ff7)
+    - [x] Write tests verifying the mapping of extracted strings to `ComicInfo` attributes.
+    - [x] Ensure proper type conversion (e.g., Year as an integer).
 
 ## Phase 3: Final Verification
 - [ ] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
