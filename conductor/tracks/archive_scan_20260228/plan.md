@@ -4,9 +4,9 @@
 - [x] Task: Create a recursive directory scanner that identifies `.cbz`, `.cbr`, and `.cb7` files. (167855a)
     - [x] Write tests to verify the scanner correctly lists files from a mock directory.
     - [x] Implement the scanner using `pathlib`.
-- [ ] Task: Integrate the scanner with the basic `ComicInfo` data model.
-    - [ ] Write tests ensuring each discovered file creates a `ComicInfo` instance with its path.
-    - [ ] Update `ComicInfo` to include a `path` attribute.
+- [x] Task: Integrate the scanner with the basic `ComicInfo` data model. (e1dfc00)
+    - [x] Write tests ensuring each discovered file creates a `ComicInfo` instance with its path.
+    - [x] Update `ComicInfo` to include a `path` attribute.
 
 ## Phase 2: Filename Metadata Extraction
 - [ ] Task: Refine `FilenameScraper` to extract Series, Volume, Issue, and Year.
