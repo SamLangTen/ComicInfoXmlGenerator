@@ -6,5 +6,5 @@ class Scraper:
     def __init__(self):
         pass
 
-    def retrieve_information(self, comic_name: str, volume: int) -> ComicInfo:
+    def retrieve_information(self, comic_name: str, volume: int, filename: str = None) -> ComicInfo:
         pass

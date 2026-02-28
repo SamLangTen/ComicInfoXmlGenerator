@@ -17,4 +17,4 @@
     - [x] Ensure proper type conversion (e.g., Year as an integer).
 
 ## Phase 3: Final Verification
-- [ ] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 1 & 2 Completion' (Protocol in workflow.md)
