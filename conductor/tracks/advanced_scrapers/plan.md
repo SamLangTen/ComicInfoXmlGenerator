@@ -5,12 +5,12 @@
 - [x] Configure environment variable loading (e.g., `.env`) [6942d08]
 
 ## Phase 2: OldSchoolFilenameScraper
-- [~] Implement `OldSchoolFilenameScraper` logic in `src/scraper/filename_scraper.py` [ ]
-- [ ] Add unit tests for `OldSchoolFilenameScraper` with directory mocking [ ]
-- [ ] Verify functionality with various naming patterns [ ]
+- [x] Implement `OldSchoolFilenameScraper` logic in `src/scraper/filename_scraper.py` [ab1f39f]
+- [x] Add unit tests for `OldSchoolFilenameScraper` with directory mocking [ab1f39f]
+- [x] Verify functionality with various naming patterns [ab1f39f]
 
 ## Phase 3: LlmFilenameScraper
-- [ ] Implement `LlmFilenameScraper` using `httpx` [ ]
+- [~] Implement `LlmFilenameScraper` using `httpx` [ ]
 - [ ] Add unit tests for `LlmFilenameScraper` with API mocking [ ]
 - [ ] Implement robust error handling for API failures [ ]
 
