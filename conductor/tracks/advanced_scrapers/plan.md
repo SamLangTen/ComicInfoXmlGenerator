@@ -2,10 +2,10 @@
 
 ## Phase 1: Setup and Infrastructure
 - [x] Update `tech-stack.md` and create `requirements.txt` [7f5ab32]
-- [~] Configure environment variable loading (e.g., `.env`) [ ]
+- [x] Configure environment variable loading (e.g., `.env`) [6942d08]
 
 ## Phase 2: OldSchoolFilenameScraper
-- [ ] Implement `OldSchoolFilenameScraper` logic in `src/scraper/filename_scraper.py` [ ]
+- [~] Implement `OldSchoolFilenameScraper` logic in `src/scraper/filename_scraper.py` [ ]
 - [ ] Add unit tests for `OldSchoolFilenameScraper` with directory mocking [ ]
 - [ ] Verify functionality with various naming patterns [ ]
 
