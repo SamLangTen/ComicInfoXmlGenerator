@@ -10,11 +10,11 @@
 - [x] Verify functionality with various naming patterns [ab1f39f]
 
 ## Phase 3: LlmFilenameScraper
-- [~] Implement `LlmFilenameScraper` using `httpx` [ ]
-- [ ] Add unit tests for `LlmFilenameScraper` with API mocking [ ]
-- [ ] Implement robust error handling for API failures [ ]
+- [x] Implement `LlmFilenameScraper` using `httpx` [17a0ac1]
+- [x] Add unit tests for `LlmFilenameScraper` with API mocking [17a0ac1]
+- [x] Implement robust error handling for API failures [17a0ac1]
 
 ## Phase 4: Integration and Cleanup
-- [ ] Update `src/scraper/__init__.py` to export new scrapers [ ]
-- [ ] Update `test/test_filename_scraper.py` to cover all scrapers [ ]
-- [ ] Final verification and checkpoint [ ]
+- [x] Update `src/scraper/__init__.py` to export new scrapers [ab1f39f, 17a0ac1]
+- [x] Update `test/test_filename_scraper.py` to cover all scrapers [f34b45d]
+- [x] Final verification and checkpoint [f34b45d]
