@@ -15,5 +15,5 @@
 - [x] Add error handling for archive operations [645f551]
 
 ## Phase 4: Final Integration and Tests
-- [~] Add integration tests for the full CLI flow [ ]
-- [ ] Final verification and checkpoint [ ]
+- [x] Add integration tests for the full CLI flow [2eb2241]
+- [x] Final verification and checkpoint [2eb2241]
