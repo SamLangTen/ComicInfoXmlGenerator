@@ -1,4 +1,4 @@
-# Implementation Plan: CLI Implementation
+# Implementation Plan: CLI Implementation [checkpoint: a4ddc39]
 
 ## Phase 1: Basic CLI Structure
 - [x] Set up `argparse` in `src/cixg.py` [645f551]
