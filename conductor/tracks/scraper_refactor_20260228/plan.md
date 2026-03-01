@@ -15,9 +15,9 @@
 - [x] Task: Update all existing tests to match the new structure. (4d61d4c)
     - [x] Update test imports to reflect the new directory layout.
     - [x] Ensure `test/test_filename_scraper.py` and other related tests pass.
-- [~] Task: Final code quality check and documentation.
-    - [ ] Run `pytest --cov=src` and ensure >80% coverage on refactored code.
-    - [ ] Check for any redundant files or empty directories and clean up.
+- [x] Task: Final code quality check and documentation. (b6b876b)
+    - [x] Run `pytest --cov=src` and ensure >80% coverage on refactored code.
+    - [x] Check for any redundant files or empty directories and clean up.
 
 ## Phase 3: Final Verification
-- [ ] Task: Conductor - User Manual Verification 'Refactored Scraper Layer' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Refactored Scraper Layer' (Protocol in workflow.md)
