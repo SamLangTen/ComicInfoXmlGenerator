@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import zipfile
 from src.scanner import scan_archives
-from src.filename_scraper import FilenameScraper
+from src.scraper import FilenameScraper
 from src.comic_info import ComicInfo
 from src.archive import inject_comic_info_xml
 

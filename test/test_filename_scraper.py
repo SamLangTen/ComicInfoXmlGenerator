@@ -1,6 +1,6 @@
 import unittest
 from src.comic_info import ComicInfo
-from src.filename_scraper import FilenameScraper
+from src.scraper import FilenameScraper
 import os
 
 class TestFilenameScraper(unittest.TestCase):
