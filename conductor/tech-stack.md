@@ -6,6 +6,7 @@
 ## Core Libraries & Frameworks
 - **xml.etree.ElementTree (Standard Library)**: Used for robust XML parsing and generation of the `ComicInfo.xml` files.
 - **dataclasses (Standard Library)**: Provides structured, type-safe data models for representing comic metadata.
+- **typing.Protocol**: Used to define a flexible, structural interface for scrapers, ensuring extensibility for future online metadata sources.
 - **re (Standard Library)**: Utilized for high-precision filename splitting and extraction of series, volume, issue, and year metadata.
 - **pathlib (Standard Library)**: Used for robust and recursive file system scanning and path manipulation.
 - **unittest & pytest**: Uses Python's standard `unittest` for test structure and `pytest` (with `pytest-cov`) for test execution and coverage reporting.
