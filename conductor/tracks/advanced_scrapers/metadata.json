@@ -1,0 +1,9 @@
+{
+  "id": "advanced_scrapers",
+  "name": "Advanced Scrapers",
+  "description": "Refactor filename scraper into OldSchool and LLM-based strategies.",
+  "status": "in-progress",
+  "owner": "Gemini CLI",
+  "created_at": "2026-03-01T00:00:00Z",
+  "updated_at": "2026-03-01T00:00:00Z"
+}
