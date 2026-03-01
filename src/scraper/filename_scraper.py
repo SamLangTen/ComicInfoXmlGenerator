@@ -1,7 +1,10 @@
 import re
 import os
+import json
+import httpx
 from typing import List
 from src.comic_info import ComicInfo
+from src.config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
 
 
 class RegexFilenameScraper:
@@ -79,38 +82,29 @@ class OldSchoolFilenameScraper:
         suffix = self._get_common_suffix(all_files)
 
         # Refine prefix to avoid including part of the number
-        # e.g., if files are "Comic 01.cbz", "Comic 02.cbz", prefix is "Comic 0"
-        # We want prefix to be "Comic " and number to be "01", "02"
         while prefix and prefix[-1].isdigit():
             prefix = prefix[:-1]
 
         # Extract variable part for the current file
-        # current_file = prefix + variable + suffix
         variable = filename[len(prefix):len(filename)-len(suffix)]
         
         # Identify Number/Volume from variable part
-        # Clean up common separators from variable start
         variable = variable.lstrip(" #-_")
         num_match = re.search(r'(\d+)', variable)
         if num_match:
             comic.Number = num_match.group(1)
         else:
-            # Fallback to the whole variable if no digits found
             comic.Number = variable.strip()
 
         # Series is the prefix, cleaned up
         series = prefix.strip()
-        # Clean up common separators at the end of series
-        # Remove trailing v, vol, volume, # etc.
         series = re.sub(r'(\s+[vV](ol(ume)?\.?)?|#+)$', '', series, flags=re.IGNORECASE)
         series = series.rstrip(" #-_").strip()
-        # Also remove group tags like [ScanGroup]
         series = re.sub(r'^\[.*?\]', '', series).strip()
         
         comic.Series = series
         
-        # Year might still be in the suffix or prefix, or somewhere else.
-        # Use Regex for Year as it's usually (2024)
+        # Year
         year_match = re.search(r'\((\d{4})\)', filename)
         if year_match:
             comic.Year = int(year_match.group(1))
@@ -131,6 +125,62 @@ class OldSchoolFilenameScraper:
         reversed_strings = [s[::-1] for s in strings]
         prefix = self._get_common_prefix(reversed_strings)
         return prefix[::-1]
+
+
+class LlmFilenameScraper:
+    """
+    Scraper that uses an LLM to parse comic metadata from the filename.
+    """
+
+    def __init__(self, model: str = LLM_MODEL, base_url: str = LLM_BASE_URL, api_key: str = LLM_API_KEY) -> None:
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.system_prompt = (
+            "You are a comic metadata expert. Analyze the given filename and extract metadata. "
+            "Return ONLY a JSON object with keys: Series, Number, Volume, Year. "
+            "Volume and Year should be integers (-1 if unknown). Number should be a string."
+        )
+
+    def search(self, comic: ComicInfo) -> ComicInfo:
+        if not comic.path or not self.api_key:
+            # Fallback to Regex if no API key or path
+            return RegexFilenameScraper().search(comic)
+
+        filename = os.path.basename(comic.path)
+        
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": f"Filename: {filename}"}
+                ],
+                "response_format": {"type": "json_object"}
+            }
+
+            response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30.0)
+            response.raise_for_status()
+            
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            metadata = json.loads(content)
+
+            comic.Series = metadata.get("Series", comic.Series)
+            comic.Number = metadata.get("Number", comic.Number)
+            comic.Volume = metadata.get("Volume", comic.Volume)
+            comic.Year = metadata.get("Year", comic.Year)
+
+        except Exception as e:
+            # Fallback to Regex on error
+            print(f"LLM Scraper error: {e}")
+            return RegexFilenameScraper().search(comic)
+
+        return comic
 
 
 # Backward compatibility

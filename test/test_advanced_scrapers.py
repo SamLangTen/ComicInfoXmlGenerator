@@ -3,7 +3,8 @@ import os
 import tempfile
 import shutil
 from src.comic_info import ComicInfo
-from src.scraper.filename_scraper import OldSchoolFilenameScraper, RegexFilenameScraper
+from src.scraper.filename_scraper import OldSchoolFilenameScraper, RegexFilenameScraper, LlmFilenameScraper
+from unittest.mock import patch, MagicMock
 
 class TestOldSchoolFilenameScraper(unittest.TestCase):
     def setUp(self):
@@ -58,6 +59,34 @@ class TestRegexFilenameScraper(unittest.TestCase):
         result = self.scraper.search(comic)
         self.assertEqual(result.Series, "Series")
         self.assertEqual(result.Number, "001")
+
+class TestLlmFilenameScraper(unittest.TestCase):
+    def setUp(self):
+        self.scraper = LlmFilenameScraper(api_key="test_key")
+
+    @patch('httpx.post')
+    def test_llm_parsing(self, mock_post):
+        # Mock successful response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"Series": "Spider-Man", "Number": "01", "Volume": 1, "Year": 2024}'
+                    }
+                }
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        comic = ComicInfo(path="Complex Filename [Group] (2024).cbz")
+        result = self.scraper.search(comic)
+
+        self.assertEqual(result.Series, "Spider-Man")
+        self.assertEqual(result.Number, "01")
+        self.assertEqual(result.Volume, 1)
+        self.assertEqual(result.Year, 2024)
 
 if __name__ == "__main__":
     unittest.main()
