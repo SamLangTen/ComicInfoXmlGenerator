@@ -12,10 +12,10 @@
     - [x] Add comprehensive docstrings.
 
 ## Phase 2: Verification and Cleanup
-- [ ] Task: Update all existing tests to match the new structure.
-    - [ ] Update test imports to reflect the new directory layout.
-    - [ ] Ensure `test/test_filename_scraper.py` and other related tests pass.
-- [ ] Task: Final code quality check and documentation.
+- [x] Task: Update all existing tests to match the new structure. (4d61d4c)
+    - [x] Update test imports to reflect the new directory layout.
+    - [x] Ensure `test/test_filename_scraper.py` and other related tests pass.
+- [~] Task: Final code quality check and documentation.
     - [ ] Run `pytest --cov=src` and ensure >80% coverage on refactored code.
     - [ ] Check for any redundant files or empty directories and clean up.
 
