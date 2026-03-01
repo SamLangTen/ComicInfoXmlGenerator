@@ -2,14 +2,32 @@ import re
 import os
 from src.comic_info import ComicInfo
 
+
 class FilenameScraper:
-    def __init__(self):
+    """
+    Scraper that extracts comic metadata directly from the archive filename.
+    
+    This scraper uses regular expressions to parse common patterns in comic 
+    filenames such as series name, volume number, issue number, and publication year.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the FilenameScraper with pre-compiled regex patterns."""
         # Regex patterns
         self.re_volume = re.compile(r'[vV]ol(ume)?\.?\s?(\d+)|[vV](\d+)')
         self.re_number = re.compile(r'#(\d+)|(?<=\s)(\d+)$') # matches #01 or standalone number at the end
         self.re_year = re.compile(r'\((\d{4})\)')
 
     def search(self, comic: ComicInfo) -> ComicInfo:
+        """
+        Extract metadata from the filename of the provided ComicInfo object.
+        
+        Args:
+            comic: The ComicInfo object containing the file path to parse.
+            
+        Returns:
+            The ComicInfo object updated with extracted metadata.
+        """
         if not comic.path:
             return comic
         
