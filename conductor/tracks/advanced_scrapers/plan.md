@@ -1,4 +1,4 @@
-# Implementation Plan: Advanced Scrapers
+# Implementation Plan: Advanced Scrapers [checkpoint: fe96ad2]
 
 ## Phase 1: Setup and Infrastructure
 - [x] Update `tech-stack.md` and create `requirements.txt` [7f5ab32]
