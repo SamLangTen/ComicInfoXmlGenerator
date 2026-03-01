@@ -1,1 +1,23 @@
-# Implementation Plan: Refactor Scraping Layer\n\n## Phase 1: Reorganization and Protocol Definition\n- [ ] Task: Define the new `Scraper` protocol and reorganize the directory.\n    - [ ] Create `src/scraper/protocol.py` defining the `Scraper` protocol using `typing.Protocol`.\n    - [ ] Move `src/filename_scraper.py` into `src/scraper/filename_scraper.py`.\n    - [ ] Remove the old base class in `src/scraper/scraper.py`.\n    - [ ] Update `src/scraper/__init__.py` for easy access to the new protocol and scrapers.\n- [ ] Task: Update the `FilenameScraper` to follow the new protocol.\n    - [ ] Add type hints to `FilenameScraper.search`.\n    - [ ] Ensure `FilenameScraper` conforms to the `Scraper` protocol.\n    - [ ] Add comprehensive docstrings.\n\n## Phase 2: Verification and Cleanup\n- [ ] Task: Update all existing tests to match the new structure.\n    - [ ] Update test imports to reflect the new directory layout.\n    - [ ] Ensure `test/test_filename_scraper.py` and other related tests pass.\n- [ ] Task: Final code quality check and documentation.\n    - [ ] Run `pytest --cov=src` and ensure >80% coverage on refactored code.\n    - [ ] Check for any redundant files or empty directories and clean up.\n\n## Phase 3: Final Verification\n- [ ] Task: Conductor - User Manual Verification 'Refactored Scraper Layer' (Protocol in workflow.md)
+# Implementation Plan: Refactor Scraping Layer
+
+## Phase 1: Reorganization and Protocol Definition
+- [x] Task: Define the new `Scraper` protocol and reorganize the directory. (dec7a28)
+    - [x] Create `src/scraper/protocol.py` defining the `Scraper` protocol using `typing.Protocol`.
+    - [x] Move `src/filename_scraper.py` into `src/scraper/filename_scraper.py`.
+    - [x] Remove the old base class in `src/scraper/scraper.py`.
+    - [x] Update `src/scraper/__init__.py` for easy access to the new protocol and scrapers.
+- [x] Task: Update the `FilenameScraper` to follow the new protocol. (dec7a28)
+    - [x] Add type hints to `FilenameScraper.search`.
+    - [x] Ensure `FilenameScraper` conforms to the `Scraper` protocol.
+    - [x] Add comprehensive docstrings.
+
+## Phase 2: Verification and Cleanup
+- [ ] Task: Update all existing tests to match the new structure.
+    - [ ] Update test imports to reflect the new directory layout.
+    - [ ] Ensure `test/test_filename_scraper.py` and other related tests pass.
+- [ ] Task: Final code quality check and documentation.
+    - [ ] Run `pytest --cov=src` and ensure >80% coverage on refactored code.
+    - [ ] Check for any redundant files or empty directories and clean up.
+
+## Phase 3: Final Verification
+- [ ] Task: Conductor - User Manual Verification 'Refactored Scraper Layer' (Protocol in workflow.md)
