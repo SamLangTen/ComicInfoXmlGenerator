@@ -29,6 +29,7 @@ class RegexFilenameScraper:
         match_year = self.re_year.search(basename)
         if match_year:
             comic.Year = int(match_year.group(1))
+            basename = basename.replace(match_year.group(0), "")
             
         # Extract Volume
         match_volume = self.re_volume.search(basename)
