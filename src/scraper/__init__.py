@@ -1,4 +1,4 @@
 from .protocol import Scraper
-from .filename_scraper import FilenameScraper
+from .filename_scraper import RegexFilenameScraper, OldSchoolFilenameScraper
 
-__all__ = ["Scraper", "FilenameScraper"]
+__all__ = ["Scraper", "RegexFilenameScraper", "OldSchoolFilenameScraper"]
