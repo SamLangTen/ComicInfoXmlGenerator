@@ -14,12 +14,15 @@ from src.scraper.filename_scraper import RegexFilenameScraper, OldSchoolFilename
 from src.config_manager import config_manager
 from tkinter import filedialog
 
-# Theme Handling (Simplified for now, will refine in Phase 3)
-try:
-    ctk.set_appearance_mode(config_manager.get("appearance_mode"))
-    ctk.set_default_color_theme("blue")
-except Exception:
-    pass
+def safe_set_theme(mode):
+    """Safely apply theme to avoid macOS version errors."""
+    try:
+        ctk.set_appearance_mode(mode)
+    except Exception as e:
+        print(f"Warning: Could not set appearance mode '{mode}': {e}")
+
+# Initial theme setup
+safe_set_theme(config_manager.get("appearance_mode"))
 
 class SettingsForm(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -57,10 +60,7 @@ class SettingsForm(ctk.CTkFrame):
 
     def _change_appearance(self, mode):
         config_manager.set("appearance_mode", mode)
-        try:
-            ctk.set_appearance_mode(mode)
-        except Exception:
-            pass
+        safe_set_theme(mode)
 
     def save_settings(self):
         config_manager.set(self.llm_url[1], self.llm_url[0].get())
