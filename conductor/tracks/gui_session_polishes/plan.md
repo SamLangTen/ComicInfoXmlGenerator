@@ -1,4 +1,4 @@
-# Implementation Plan: GUI Session Polishes
+# Implementation Plan: GUI Session Polishes [checkpoint: bba36c3]
 
 ## Phase 1: Metadata Caching
 - [x] Implement `self.comic_cache` in `App` class [bc35304]
