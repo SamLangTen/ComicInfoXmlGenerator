@@ -88,6 +88,29 @@ class ComicInfo:
         ET.SubElement(root, "LanguageISO").text = self.LanguageISO
         if self.Year != -1:
             ET.SubElement(root, "Year").text = str(self.Year)
+        if self.Month != -1:
+            ET.SubElement(root, "Month").text = str(self.Month)
+        if self.Day != -1:
+            ET.SubElement(root, "Day").text = str(self.Day)
+        
+        ET.SubElement(root, "Writer").text = self.Writer
+        ET.SubElement(root, "Penciller").text = self.Penciller
+        ET.SubElement(root, "Inker").text = self.Inker
+        ET.SubElement(root, "Colorist").text = self.Colorist
+        ET.SubElement(root, "Letterer").text = self.Letterer
+        ET.SubElement(root, "CoverArtist").text = self.CoverArtist
+        ET.SubElement(root, "Editor").text = self.Editor
+        ET.SubElement(root, "Imprint").text = self.Imprint
+        ET.SubElement(root, "AgeRating").text = self.AgeRating
+        ET.SubElement(root, "Characters").text = self.Characters
+        ET.SubElement(root, "Teams").text = self.Teams
+        ET.SubElement(root, "Locations").text = self.Locations
+        ET.SubElement(root, "ScanInformation").text = self.ScanInformation
+        ET.SubElement(root, "StoryArc").text = self.StoryArc
+        ET.SubElement(root, "SeriesGroup").text = self.SeriesGroup
+        ET.SubElement(root, "Web").text = self.Web
+        ET.SubElement(root, "BlackAndWhite").text = self.BlackAndWhite
+        ET.SubElement(root, "Manga").text = self.Manga
 
         pages_elem = ET.SubElement(root, "Pages")
         for page in self.Pages:
@@ -109,6 +132,26 @@ class ComicInfo:
             PageCount=int(element.findtext("PageCount", 0)),
             LanguageISO=element.findtext("LanguageISO", ""),
             Year=int(element.findtext("Year", -1)),
+            Month=int(element.findtext("Month", -1)),
+            Day=int(element.findtext("Day", -1)),
+            Writer=element.findtext("Writer", ""),
+            Penciller=element.findtext("Penciller", ""),
+            Inker=element.findtext("Inker", ""),
+            Colorist=element.findtext("Colorist", ""),
+            Letterer=element.findtext("Letterer", ""),
+            CoverArtist=element.findtext("CoverArtist", ""),
+            Editor=element.findtext("Editor", ""),
+            Imprint=element.findtext("Imprint", ""),
+            AgeRating=element.findtext("AgeRating", ""),
+            Characters=element.findtext("Characters", ""),
+            Teams=element.findtext("Teams", ""),
+            Locations=element.findtext("Locations", ""),
+            ScanInformation=element.findtext("ScanInformation", ""),
+            StoryArc=element.findtext("StoryArc", ""),
+            SeriesGroup=element.findtext("SeriesGroup", ""),
+            Web=element.findtext("Web", ""),
+            BlackAndWhite=element.findtext("BlackAndWhite", "Unknown"),
+            Manga=element.findtext("Manga", "Unknown"),
             Pages=[
                 ComicPageInfo.from_xml(page)
                 for page in (element.find("Pages") if element.find("Pages") is not None else [])
