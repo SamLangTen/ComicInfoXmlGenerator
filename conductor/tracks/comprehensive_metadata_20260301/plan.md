@@ -3,8 +3,8 @@
 ## Phase 1: Metadata Core Expansion
 - [x] Task: Write failing unit tests for extended `ComicInfo` fields in `test/test_comic_info_xml.py` [998d22e]
 - [x] Task: Update `ComicInfo` dataclass in `src/comic_info.py` with 20+ new fields [a08b6f7]
-- [~] Task: Update `to_xml` and `from_xml` logic to handle serialization
-- [ ] Task: Verify unit tests pass (Green phase)
+- [x] Task: Update `to_xml` and `from_xml` logic to handle serialization [a31d74b]
+- [~] Task: Verify unit tests pass (Green phase)
 - [ ] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md)
 
 ## Phase 2: CLI Expansion
