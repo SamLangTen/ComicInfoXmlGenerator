@@ -137,9 +137,16 @@ class App(ctk.CTk):
         top_frame = ctk.CTkFrame(tab)
         top_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         ctk.CTkButton(top_frame, text="Scan Directory", command=self.browse_directory).pack(side="left", padx=10)
+        
+        ctk.CTkLabel(top_frame, text="|").pack(side="left", padx=5)
+        
         self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"])
         self.scraper_menu.pack(side="left", padx=10)
         self.scraper_menu.set(config_manager.get("default_scraper"))
+        
+        self.apply_button = ctk.CTkButton(top_frame, text="Apply Scraper", command=self.apply_scraper, fg_color="green", hover_color="darkgreen")
+        self.apply_button.pack(side="left", padx=10)
+        self.apply_button.configure(state="disabled") # Disabled until a file is selected
 
         # Left List
         self.file_list_container = ctk.CTkScrollableFrame(tab)
@@ -206,11 +213,16 @@ class App(ctk.CTk):
             btn.pack(fill="x", padx=5, pady=2)
 
     def on_file_select(self, file_path: str):
-        self.log(f"Loading: {os.path.basename(file_path)}")
+        self.log(f"Selected: {os.path.basename(file_path)}")
         self.selected_comic = ComicInfo(path=file_path)
-        
-        # Get strategy and latest settings
+        self.apply_button.configure(state="normal")
+        self.metadata_form.load_comic(self.selected_comic)
+
+    def apply_scraper(self):
+        if not self.selected_comic: return
         strategy = self.scraper_menu.get().lower()
+        self.log(f"Applying {strategy} scraper...")
+        
         try:
             if strategy == "oldschool": 
                 scraper = OldSchoolFilenameScraper()
@@ -218,23 +230,20 @@ class App(ctk.CTk):
                 api_key = config_manager.get("llm_api_key")
                 if not api_key:
                     self.log("Error: LLM API Key is missing in Settings!")
-                    scraper = RegexFilenameScraper()
-                else:
-                    scraper = LlmFilenameScraper(
-                        api_key=api_key,
-                        base_url=config_manager.get("llm_base_url"),
-                        model=config_manager.get("llm_model")
-                    )
+                    return
+                scraper = LlmFilenameScraper(
+                    api_key=api_key,
+                    base_url=config_manager.get("llm_base_url"),
+                    model=config_manager.get("llm_model")
+                )
             else: 
                 scraper = RegexFilenameScraper()
             
             scraper.search(self.selected_comic)
             self.metadata_form.load_comic(self.selected_comic)
+            self.log("Scraper finished.")
         except Exception as e:
             self.log(f"Scraper Error ({strategy}): {e}")
-            # Fallback
-            RegexFilenameScraper().search(self.selected_comic)
-            self.metadata_form.load_comic(self.selected_comic)
 
     def save_current_comic(self):
         if not self.selected_comic: return
