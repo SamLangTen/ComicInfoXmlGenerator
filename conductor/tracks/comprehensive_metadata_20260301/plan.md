@@ -1,0 +1,28 @@
+# Implementation Plan: Comprehensive Metadata Support
+
+## Phase 1: Metadata Core Expansion
+- [ ] Task: Write failing unit tests for extended `ComicInfo` fields in `test/test_comic_info_xml.py`
+- [ ] Task: Update `ComicInfo` dataclass in `src/comic_info.py` with 20+ new fields
+- [ ] Task: Update `to_xml` and `from_xml` logic to handle serialization
+- [ ] Task: Verify unit tests pass (Green phase)
+- [ ] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md)
+
+## Phase 2: CLI Expansion
+- [ ] Task: Write failing integration tests for new CLI flags in `test/test_cli.py`
+- [ ] Task: Update `src/cixg.py` to include `argparse` flags for all extended fields
+- [ ] Task: Map CLI flags to the `ComicInfo` data model during processing
+- [ ] Task: Verify CLI tests pass
+- [ ] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md)
+
+## Phase 3: GUI Tabbed Restructuring
+- [ ] Task: Refactor `gui/app.py` to replace the simple `MetadataForm` with a `ctk.CTkTabview`
+- [ ] Task: Implement 'General', 'Credits', 'Tags & Details', and 'Publishing' tabs
+- [ ] Task: Wire tab inputs to the `selected_comic` object and session cache
+- [ ] Task: Implement basic validation visual cues (e.g., red border for invalid types)
+- [ ] Task: Conductor - User Manual Verification 'GUI Tabbed Restructuring' (Protocol in workflow.md)
+
+## Phase 4: Validation & Final Integration
+- [ ] Task: Implement specific validation logic for Age Rating and Credit string formats
+- [ ] Task: Perform full end-to-end testing (Scan -> Batch Scrape -> Manual Edit -> Inject)
+- [ ] Task: Final code cleanup and documentation update
+- [ ] Task: Conductor - User Manual Verification 'Validation & Final Integration' (Protocol in workflow.md)
