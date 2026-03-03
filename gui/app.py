@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import os
 import sys
+import threading
 from pathlib import Path
 
 # Add project root to sys.path
@@ -221,15 +222,24 @@ class App(ctk.CTk):
     def apply_scraper(self):
         if not self.selected_comic: return
         strategy = self.scraper_menu.get().lower()
-        self.log(f"Applying {strategy} scraper...")
-        
+
+        self.set_busy(True, f"Running {strategy} scraper...")
+        self.log(f"Applying {strategy} scraper (background)...")
+
+        # Run in background thread
+        thread = threading.Thread(target=self._async_apply_scraper, args=(strategy,))
+        thread.daemon = True
+        thread.start()
+
+    def _async_apply_scraper(self, strategy: str):
         try:
             if strategy == "oldschool": 
                 scraper = OldSchoolFilenameScraper()
             elif strategy == "llm":
                 api_key = config_manager.get("llm_api_key")
                 if not api_key:
-                    self.log("Error: LLM API Key is missing in Settings!")
+                    self.after(0, lambda: self.log("Error: LLM API Key is missing!"))
+                    self.after(0, lambda: self.set_busy(False))
                     return
                 scraper = LlmFilenameScraper(
                     api_key=api_key,
@@ -238,12 +248,20 @@ class App(ctk.CTk):
                 )
             else: 
                 scraper = RegexFilenameScraper()
-            
+
             scraper.search(self.selected_comic)
-            self.metadata_form.load_comic(self.selected_comic)
-            self.log("Scraper finished.")
+
+            # Update UI on main thread
+            self.after(0, self._on_scraper_complete)
         except Exception as e:
-            self.log(f"Scraper Error ({strategy}): {e}")
+            self.after(0, lambda err=e: self.log(f"Scraper Error: {err}"))
+            self.after(0, lambda: self.set_busy(False))
+
+    def _on_scraper_complete(self):
+        self.metadata_form.load_comic(self.selected_comic)
+        self.set_busy(False)
+        self.log("Scraper finished.")
+
 
     def save_current_comic(self):
         if not self.selected_comic: return
