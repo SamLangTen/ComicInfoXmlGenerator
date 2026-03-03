@@ -1,0 +1,9 @@
+{
+  "id": "gui_ux_enhancements",
+  "name": "GUI UX Enhancements",
+  "description": "Improve GUI responsiveness with threading, add manual scraper controls, progress bars, and log LLM prompts for transparency.",
+  "status": "in-progress",
+  "owner": "Gemini CLI",
+  "created_at": "2026-03-01T04:00:00Z",
+  "updated_at": "2026-03-01T04:00:00Z"
+}
