@@ -1,4 +1,4 @@
-# Implementation Plan: Scraper Consolidation
+# Implementation Plan: Scraper Consolidation [checkpoint: a433048]
 
 ## Phase 1: Code Migration
 - [x] Create `src/scraper/local_scraper.py` with merged logic [b155616]
