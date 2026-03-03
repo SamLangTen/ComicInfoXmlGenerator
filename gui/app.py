@@ -146,10 +146,14 @@ class App(ctk.CTk):
 
         ctk.CTkLabel(top_frame, text="|").pack(side="left", padx=5)
         
-        self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"])
-        self.scraper_menu.pack(side="left", padx=10)
+        self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"], width=100)
+        self.scraper_menu.pack(side="left", padx=5)
         self.scraper_menu.set(config_manager.get("default_scraper"))
         
+        self.mode_var = ctk.StringVar(value="Overwrite")
+        self.mode_switch = ctk.CTkSegmentedButton(top_frame, values=["Overwrite", "Fill Gaps"], variable=self.mode_var)
+        self.mode_switch.pack(side="left", padx=10)
+
         self.apply_button = ctk.CTkButton(top_frame, text="Apply Scraper", command=self.apply_scraper, fg_color="green", hover_color="darkgreen")
         self.apply_button.pack(side="left", padx=10)
         self.apply_button.configure(state="disabled") # Disabled until a file is selected
@@ -272,6 +276,26 @@ class App(ctk.CTk):
         self.log(f"Selected: {os.path.basename(file_path)}")
         self.selected_comic = ComicInfo(path=file_path)
         self.metadata_form.load_comic(self.selected_comic)
+
+    def _merge_metadata(self, target: ComicInfo, source: ComicInfo, mode: str):
+        """Merge source (scraper result) into target (current) based on mode."""
+        fields = ["Series", "Number", "Volume", "Year", "Publisher", "Genre", "Summary"]
+        for field in fields:
+            new_val = getattr(source, field)
+            curr_val = getattr(target, field)
+            
+            should_update = False
+            if mode == "Overwrite":
+                should_update = True
+            elif mode == "Fill Gaps":
+                # Check if field is 'empty'
+                if isinstance(curr_val, str):
+                    if not curr_val.strip(): should_update = True
+                elif isinstance(curr_val, int):
+                    if curr_val == -1: should_update = True
+            
+            if should_update and new_val not in [None, "", -1]:
+                setattr(target, field, new_val)
 
     def apply_scraper(self):
         if not self.selected_comic: return
