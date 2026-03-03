@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
 from src.archive import inject_comic_info_xml
-from src.scraper.filename_scraper import RegexFilenameScraper, OldSchoolFilenameScraper, LlmFilenameScraper
+from src.scraper import LocalFilenameScraper, LlmFilenameScraper
 from src.config_manager import config_manager
 from tkinter import filedialog
 
@@ -216,31 +216,18 @@ class App(ctk.CTk):
             self.file_buttons[f] = btn
 
     def on_item_click(self, event, file_path: str):
-        # Check for Command (macOS) or Control (Windows/Linux)
-        # event.state bit 2 is Control, bit 4 is Command on macOS usually
-        is_multi = (event.state & 0x0004) or (event.state & 0x0008) or (sys.platform == 'darwin' and event.state & 0x0010)
-        # Simplified cross-platform check for common modifier masks
         is_command_or_ctrl = (event.state & (1 << 2)) or (event.state & (1 << 3)) or (event.state & (1 << 4)) or (event.state & (1 << 12))
-
         if not is_command_or_ctrl:
             self.selected_paths = {file_path}
         else:
-            if file_path in self.selected_paths:
-                self.selected_paths.remove(file_path)
-            else:
-                self.selected_paths.add(file_path)
-        
+            if file_path in self.selected_paths: self.selected_paths.remove(file_path)
+            else: self.selected_paths.add(file_path)
         self.on_file_load(file_path)
         self._refresh_file_list_visuals()
-        
         if self.selected_paths:
             self.apply_button.configure(state="normal", text=f"Apply Scraper ({len(self.selected_paths)})")
         else:
             self.apply_button.configure(state="disabled", text="Apply Scraper")
-
-    def toggle_selection(self, file_path: str):
-        # Replaced by on_item_click for modifier support
-        pass
 
     def _refresh_file_list_visuals(self):
         for path, btn in self.file_buttons.items():
@@ -294,27 +281,22 @@ class App(ctk.CTk):
 
     def _async_apply_scraper(self, strategy: str, mode: str, targets: list):
         try:
-            if strategy == "oldschool": scraper = OldSchoolFilenameScraper()
-            elif strategy == "llm":
+            if strategy == "llm":
                 api_key = config_manager.get("llm_api_key")
                 if not api_key:
                     self.after(0, lambda: self.log("Error: LLM API Key is missing!"))
                     self.after(0, lambda: self.set_busy(False))
                     return
                 scraper = LlmFilenameScraper(api_key=api_key, base_url=config_manager.get("llm_base_url"), model=config_manager.get("llm_model"))
-            else: scraper = RegexFilenameScraper()
+            else: scraper = LocalFilenameScraper()
 
             for i, path in enumerate(targets):
                 self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
                 scraped_data = ComicInfo(path=path)
                 scraper.search(scraped_data)
-                
-                # Update cache
                 if path not in self.comic_cache:
                     self.comic_cache[path] = ComicInfo(path=path)
                 self._merge_metadata(self.comic_cache[path], scraped_data, mode)
-                
-                # Refresh UI if currently viewing this file
                 if self.selected_comic and self.selected_comic.path == path:
                     self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
 

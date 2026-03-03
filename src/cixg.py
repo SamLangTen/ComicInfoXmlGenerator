@@ -2,17 +2,16 @@ import argparse
 import os
 import sys
 from src.scanner import scan_archives
-from src.scraper import RegexFilenameScraper, OldSchoolFilenameScraper, LlmFilenameScraper
+from src.scraper import LocalFilenameScraper, LlmFilenameScraper
 from src.comic_info import ComicInfo
 from src.archive import inject_comic_info_xml
 
 def get_scraper(name: str):
-    if name == "oldschool":
-        return OldSchoolFilenameScraper()
-    elif name == "llm":
+    if name == "llm":
         return LlmFilenameScraper()
     else:
-        return RegexFilenameScraper()
+        # Both 'regex' and 'oldschool' now consolidated into LocalFilenameScraper
+        return LocalFilenameScraper()
 
 def scan_command(args):
     files = scan_archives(args.directory)

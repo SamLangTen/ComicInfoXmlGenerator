@@ -1,4 +1,17 @@
 from .protocol import Scraper
-from .filename_scraper import RegexFilenameScraper, OldSchoolFilenameScraper, LlmFilenameScraper, FilenameScraper
+from .local_scraper import LocalFilenameScraper
+from .llm_scraper import LlmFilenameScraper
 
-__all__ = ["Scraper", "RegexFilenameScraper", "OldSchoolFilenameScraper", "LlmFilenameScraper", "FilenameScraper"]
+# Backward compatibility aliases
+RegexFilenameScraper = LocalFilenameScraper
+OldSchoolFilenameScraper = LocalFilenameScraper
+FilenameScraper = LocalFilenameScraper
+
+__all__ = [
+    "Scraper", 
+    "LocalFilenameScraper", 
+    "LlmFilenameScraper", 
+    "RegexFilenameScraper", 
+    "OldSchoolFilenameScraper", 
+    "FilenameScraper"
+]
