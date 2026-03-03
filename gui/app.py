@@ -1,39 +1,89 @@
 import customtkinter as ctk
 import os
+import sys
+from pathlib import Path
+
+# Add project root to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import core logic
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
 from src.archive import inject_comic_info_xml
 from src.scraper.filename_scraper import RegexFilenameScraper, OldSchoolFilenameScraper, LlmFilenameScraper
+from src.config_manager import config_manager
 from tkinter import filedialog
 
+# Theme Handling (Simplified for now, will refine in Phase 3)
 try:
-    ctk.set_appearance_mode("Dark")
+    ctk.set_appearance_mode(config_manager.get("appearance_mode"))
+    ctk.set_default_color_theme("blue")
 except Exception:
     pass
+
+class SettingsForm(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.grid_columnconfigure(1, weight=1)
+        
+        row = 0
+        ctk.CTkLabel(self, text="LLM Configuration", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=0, columnspan=2, pady=(10, 20), sticky="w")
+        row += 1
+
+        self.llm_url = self._add_setting(row, "Base URL:", "llm_base_url")
+        row += 1
+        self.llm_key = self._add_setting(row, "API Key:", "llm_api_key", show="*")
+        row += 1
+        self.llm_model = self._add_setting(row, "Model:", "llm_model")
+        row += 1
+
+        ctk.CTkLabel(self, text="UI Configuration", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=0, columnspan=2, pady=(20, 20), sticky="w")
+        row += 1
+
+        ctk.CTkLabel(self, text="Appearance:", anchor="w").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        self.appearance_menu = ctk.CTkOptionMenu(self, values=["Light", "Dark", "System"], command=self._change_appearance)
+        self.appearance_menu.grid(row=row, column=1, padx=10, pady=5, sticky="w")
+        self.appearance_menu.set(config_manager.get("appearance_mode"))
+        row += 1
+
+        ctk.CTkButton(self, text="Save Settings", command=self.save_settings).grid(row=row, column=0, columnspan=2, pady=30)
+
+    def _add_setting(self, row, label, config_key, show=None):
+        ctk.CTkLabel(self, text=label, anchor="w").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        entry = ctk.CTkEntry(self, show=show)
+        entry.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+        entry.insert(0, config_manager.get(config_key))
+        return (entry, config_key)
+
+    def _change_appearance(self, mode):
+        config_manager.set("appearance_mode", mode)
+        try:
+            ctk.set_appearance_mode(mode)
+        except Exception:
+            pass
+
+    def save_settings(self):
+        config_manager.set(self.llm_url[1], self.llm_url[0].get())
+        config_manager.set(self.llm_key[1], self.llm_key[0].get())
+        config_manager.set(self.llm_model[1], self.llm_model[0].get())
+        print("Settings saved to config.json")
 
 class MetadataForm(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self.grid_columnconfigure(1, weight=1)
-        
         self.fields = {}
         row = 0
         for label_text in ["Series", "Number", "Volume", "Year", "Publisher", "Genre"]:
             lbl = ctk.CTkLabel(self, text=label_text, anchor="w")
             lbl.grid(row=row, column=0, padx=10, pady=5, sticky="w")
-            
             entry = ctk.CTkEntry(self)
             entry.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
             self.fields[label_text] = entry
             row += 1
-
-        # Summary as a text area
-        self.summary_label = ctk.CTkLabel(self, text="Summary", anchor="w")
-        self.summary_label.grid(row=row, column=0, padx=10, pady=5, sticky="nw")
-        self.summary_text = ctk.CTkTextbox(self, height=80)
+        self.summary_text = ctk.CTkTextbox(self, height=120)
         self.summary_text.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
         row += 1
-
         self.save_button = ctk.CTkButton(self, text="Inject Metadata", command=self.on_save)
         self.save_button.grid(row=row, column=0, columnspan=2, padx=10, pady=20)
 
@@ -54,64 +104,60 @@ class MetadataForm(ctk.CTkFrame):
         self.summary_text.insert("0.0", comic.Summary)
 
     def on_save(self):
-        if hasattr(self.master.master, 'save_current_comic'):
-             self.master.master.save_current_comic()
+        if hasattr(self.master.master.master, 'save_current_comic'):
+             self.master.master.master.save_current_comic()
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-
         self.title("ComicInfoXmlGenerator")
-        self.geometry(f"{1100}x650")
+        self.geometry(f"{1100}x700")
         self.current_directory = None
         self.found_files = []
         self.selected_comic = None
 
-        # Configure grid layout
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-        # Sidebar
-        self.sidebar_frame = ctk.CTkFrame(self, width=140, corner_radius=0)
-        self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
-        
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="CIXG", font=ctk.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        
-        self.scan_button = ctk.CTkButton(self.sidebar_frame, text="Scan Directory", command=self.browse_directory)
-        self.scan_button.grid(row=1, column=0, padx=20, pady=10)
-        
-        self.scraper_label = ctk.CTkLabel(self.sidebar_frame, text="Strategy:", anchor="w")
-        self.scraper_label.grid(row=2, column=0, padx=20, pady=(10, 0))
-        self.scraper_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=["Regex", "OldSchool", "LLM"])
-        self.scraper_menu.grid(row=3, column=0, padx=20, pady=(10, 10))
-        self.scraper_menu.set("Regex")
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.grid(row=0, column=0, padx=20, pady=(10, 20), sticky="nsew")
+        self.tabview.add("Editor")
+        self.tabview.add("Settings")
 
-        self.appearance_mode_optionemenu = ctk.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 10))
+        self._setup_editor_tab()
+        self._setup_settings_tab()
 
-        # File List
-        self.file_list_frame = ctk.CTkFrame(self)
-        self.file_list_frame.grid(row=0, column=1, rowspan=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.file_list_label = ctk.CTkLabel(self.file_list_frame, text="Archives", font=ctk.CTkFont(size=16, weight="bold"))
-        self.file_list_label.pack(padx=20, pady=10)
-        self.file_list_container = ctk.CTkScrollableFrame(self.file_list_frame)
-        self.file_list_container.pack(expand=True, fill="both", padx=10, pady=10)
+    def _setup_editor_tab(self):
+        tab = self.tabview.tab("Editor")
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_columnconfigure(1, weight=2)
+        tab.grid_rowconfigure(1, weight=1)
 
-        # Editor
-        self.details_frame = ctk.CTkFrame(self)
-        self.details_frame.grid(row=0, column=2, rowspan=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
-        self.details_label = ctk.CTkLabel(self.details_frame, text="Editor", font=ctk.CTkFont(size=16, weight="bold"))
-        self.details_label.pack(padx=20, pady=10)
-        
-        self.metadata_form = MetadataForm(self.details_frame)
-        self.metadata_form.pack(expand=True, fill="both", padx=10, pady=10)
+        # Top tools
+        top_frame = ctk.CTkFrame(tab)
+        top_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        ctk.CTkButton(top_frame, text="Scan Directory", command=self.browse_directory).pack(side="left", padx=10)
+        self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"])
+        self.scraper_menu.pack(side="left", padx=10)
+        self.scraper_menu.set(config_manager.get("default_scraper"))
 
-        # Log
-        self.log_textbox = ctk.CTkTextbox(self, height=100)
-        self.log_textbox.grid(row=3, column=1, columnspan=2, padx=(20, 20), pady=(20, 20), sticky="nsew")
+        # Left List
+        self.file_list_container = ctk.CTkScrollableFrame(tab)
+        self.file_list_container.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Right Editor
+        self.metadata_form = MetadataForm(tab)
+        self.metadata_form.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+
+        # Bottom Log
+        self.log_textbox = ctk.CTkTextbox(tab, height=100)
+        self.log_textbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
+    def _setup_settings_tab(self):
+        tab = self.tabview.tab("Settings")
+        tab.grid_columnconfigure(0, weight=1)
+        self.settings_form = SettingsForm(tab)
+        self.settings_form.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
     def log(self, message: str):
         self.log_textbox.insert("end", f"{message}\n")
@@ -121,7 +167,7 @@ class App(ctk.CTk):
         directory = filedialog.askdirectory()
         if directory:
             self.current_directory = directory
-            self.log(f"Selected directory: {directory}")
+            self.log(f"Selected: {directory}")
             self.scan()
 
     def scan(self):
@@ -140,35 +186,40 @@ class App(ctk.CTk):
         self.log(f"Loading: {os.path.basename(file_path)}")
         self.selected_comic = ComicInfo(path=file_path)
         
+        # Inject current configuration into scrapers
         strategy = self.scraper_menu.get().lower()
-        if strategy == "oldschool": scraper = OldSchoolFilenameScraper()
-        elif strategy == "llm": scraper = LlmFilenameScraper()
-        else: scraper = RegexFilenameScraper()
+        if strategy == "oldschool": 
+            scraper = OldSchoolFilenameScraper()
+        elif strategy == "llm": 
+            scraper = LlmFilenameScraper(
+                api_key=config_manager.get("llm_api_key"),
+                base_url=config_manager.get("llm_base_url"),
+                model=config_manager.get("llm_model")
+            )
+        else: 
+            scraper = RegexFilenameScraper()
         
         scraper.search(self.selected_comic)
         self.metadata_form.load_comic(self.selected_comic)
 
     def save_current_comic(self):
         if not self.selected_comic: return
-        
-        self.selected_comic.Series = self.metadata_form.fields["Series"].get()
-        self.selected_comic.Number = self.metadata_form.fields["Number"].get()
-        vol = self.metadata_form.fields["Volume"].get()
+        f = self.metadata_form.fields
+        self.selected_comic.Series = f["Series"].get()
+        self.selected_comic.Number = f["Number"].get()
+        vol = f["Volume"].get()
         self.selected_comic.Volume = int(vol) if vol.isdigit() else -1
-        year = self.metadata_form.fields["Year"].get()
+        year = f["Year"].get()
         self.selected_comic.Year = int(year) if year.isdigit() else -1
-        self.selected_comic.Publisher = self.metadata_form.fields["Publisher"].get()
-        self.selected_comic.Genre = self.metadata_form.fields["Genre"].get()
+        self.selected_comic.Publisher = f["Publisher"].get()
+        self.selected_comic.Genre = f["Genre"].get()
         self.selected_comic.Summary = self.metadata_form.summary_text.get("0.0", "end").strip()
         
         try:
             inject_comic_info_xml(self.selected_comic.path, self.selected_comic)
-            self.log(f"Success: Metadata injected into {os.path.basename(self.selected_comic.path)}")
+            self.log(f"Success: {os.path.basename(self.selected_comic.path)}")
         except Exception as e:
             self.log(f"Error: {e}")
-
-    def change_appearance_mode_event(self, new_appearance_mode: str):
-        ctk.set_appearance_mode(new_appearance_mode)
 
 if __name__ == "__main__":
     app = App()
