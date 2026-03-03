@@ -1,4 +1,4 @@
-# Implementation Plan: GUI Advanced Features
+# Implementation Plan: GUI Advanced Features [checkpoint: 5f1d7ee]
 
 ## Phase 1: Enhanced Selection UI
 - [x] Implement visual highlighting for selected items in `file_list_container` [c7465ff]
