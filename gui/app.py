@@ -80,14 +80,26 @@ class App(ctk.CTk):
         self.found_files = scan_archives(self.current_directory)
         self.log(f"Found {len(self.found_files)} comic archives.")
         
-        # Clear existing list items (simplified for now)
+        # Clear existing list items
         for widget in self.file_list_container.winfo_children():
             widget.destroy()
 
         for f in self.found_files:
             rel_path = os.path.relpath(f, self.current_directory)
-            btn = ctk.CTkButton(self.file_list_container, text=rel_path, anchor="w", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"))
+            btn = ctk.CTkButton(
+                self.file_list_container, 
+                text=rel_path, 
+                anchor="w", 
+                fg_color="transparent", 
+                text_color=("gray10", "gray90"), 
+                hover_color=("gray70", "gray30"),
+                command=lambda p=f: self.on_file_select(p)
+            )
             btn.pack(fill="x", padx=5, pady=2)
+
+    def on_file_select(self, file_path: str):
+        self.log(f"Selected file: {os.path.basename(file_path)}")
+        # Next: Load metadata into the details frame
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
