@@ -1,4 +1,4 @@
-# Implementation Plan: GUI UX Enhancements
+# Implementation Plan: GUI UX Enhancements [checkpoint: 64f08ec]
 
 ## Phase 1: Logging and Preparation
 - [x] Update `LlmFilenameScraper` to log prompts to stdout [ce60df8]
