@@ -210,25 +210,37 @@ class App(ctk.CTk):
         for f in self.found_files:
             rel_path = os.path.relpath(f, self.current_directory)
             btn = ctk.CTkButton(self.file_list_container, text=rel_path, anchor="w", fg_color="transparent", 
-                                text_color=("gray10", "gray90"), command=lambda p=f: self.toggle_selection(p))
+                                text_color=("gray10", "gray90"))
             btn.pack(fill="x", padx=5, pady=2)
+            btn.bind("<Button-1>", lambda e, p=f: self.on_item_click(e, p))
             self.file_buttons[f] = btn
 
-    def toggle_selection(self, file_path: str):
-        # Default behavior: single selection unless Command/Control is pressed
-        # Wait: CTkButton command doesn't pass event. 
-        # For simplicity, we'll implement standard selection in Phase 3.
-        # This turn focuses on Caching.
-        if file_path in self.selected_paths:
-            self.selected_paths.remove(file_path)
+    def on_item_click(self, event, file_path: str):
+        # Check for Command (macOS) or Control (Windows/Linux)
+        # event.state bit 2 is Control, bit 4 is Command on macOS usually
+        is_multi = (event.state & 0x0004) or (event.state & 0x0008) or (sys.platform == 'darwin' and event.state & 0x0010)
+        # Simplified cross-platform check for common modifier masks
+        is_command_or_ctrl = (event.state & (1 << 2)) or (event.state & (1 << 3)) or (event.state & (1 << 4)) or (event.state & (1 << 12))
+
+        if not is_command_or_ctrl:
+            self.selected_paths = {file_path}
         else:
-            self.selected_paths.add(file_path)
-            self.on_file_load(file_path)
+            if file_path in self.selected_paths:
+                self.selected_paths.remove(file_path)
+            else:
+                self.selected_paths.add(file_path)
+        
+        self.on_file_load(file_path)
         self._refresh_file_list_visuals()
+        
         if self.selected_paths:
             self.apply_button.configure(state="normal", text=f"Apply Scraper ({len(self.selected_paths)})")
         else:
             self.apply_button.configure(state="disabled", text="Apply Scraper")
+
+    def toggle_selection(self, file_path: str):
+        # Replaced by on_item_click for modifier support
+        pass
 
     def _refresh_file_list_visuals(self):
         for path, btn in self.file_buttons.items():
