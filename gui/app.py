@@ -115,9 +115,10 @@ class App(ctk.CTk):
         self.geometry(f"{1100}x750")
         self.current_directory = None
         self.found_files = []
-        self.selected_paths = set() # Store multiple selected paths
-        self.file_buttons = {} # path -> button widget
-        self.selected_comic = None # Primary comic for editor
+        self.selected_paths = set()
+        self.file_buttons = {}
+        self.comic_cache = {} # path -> ComicInfo
+        self.selected_comic = None
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -136,52 +137,38 @@ class App(ctk.CTk):
         tab.grid_columnconfigure(1, weight=2)
         tab.grid_rowconfigure(1, weight=1)
 
-        # Top tools
         top_frame = ctk.CTkFrame(tab)
         top_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         ctk.CTkButton(top_frame, text="Scan Directory", command=self.browse_directory, width=120).pack(side="left", padx=5)
-        
         ctk.CTkButton(top_frame, text="Select All", command=self.select_all, width=80, fg_color="gray", hover_color="dim gray").pack(side="left", padx=5)
         ctk.CTkButton(top_frame, text="Clear", command=self.clear_selection, width=60, fg_color="gray", hover_color="dim gray").pack(side="left", padx=5)
-
         ctk.CTkLabel(top_frame, text="|").pack(side="left", padx=5)
         
         self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"], width=100)
         self.scraper_menu.pack(side="left", padx=5)
         self.scraper_menu.set(config_manager.get("default_scraper"))
-        
         self.mode_var = ctk.StringVar(value="Overwrite")
         self.mode_switch = ctk.CTkSegmentedButton(top_frame, values=["Overwrite", "Fill Gaps"], variable=self.mode_var)
         self.mode_switch.pack(side="left", padx=10)
-
         self.apply_button = ctk.CTkButton(top_frame, text="Apply Scraper", command=self.apply_scraper, fg_color="green", hover_color="darkgreen")
         self.apply_button.pack(side="left", padx=10)
-        self.apply_button.configure(state="disabled") # Disabled until a file is selected
+        self.apply_button.configure(state="disabled")
 
-        # Left List
         self.file_list_container = ctk.CTkScrollableFrame(tab)
         self.file_list_container.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-
-        # Right Editor
         self.metadata_form = MetadataForm(tab)
         self.metadata_form.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-
-        # Bottom Log and Status
         self.log_textbox = ctk.CTkTextbox(tab, height=100)
         self.log_textbox.grid(row=2, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="ew")
-
-        # Status and Progress Area
         self.status_frame = ctk.CTkFrame(tab, height=30, fg_color="transparent")
         self.status_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=(5, 10), sticky="ew")
-        
         self.status_label = ctk.CTkLabel(self.status_frame, text="Ready", font=ctk.CTkFont(size=12))
         self.status_label.pack(side="left", padx=5)
-        
         self.progress_bar = ctk.CTkProgressBar(self.status_frame, width=200)
         self.progress_bar.pack(side="right", padx=10)
         self.progress_bar.set(0)
         self.progress_bar.configure(mode="indeterminate")
-        self.progress_bar.pack_forget() # Hide by default
+        self.progress_bar.pack_forget()
 
     def set_busy(self, busy: bool, message: str = "Processing..."):
         if busy:
@@ -215,38 +202,29 @@ class App(ctk.CTk):
         self.log("Scanning...")
         self.found_files = scan_archives(self.current_directory)
         self.log(f"Found {len(self.found_files)} archives.")
-        
-        # Reset selection state
         self.selected_paths.clear()
         self.file_buttons.clear()
+        self.comic_cache.clear()
         self.apply_button.configure(state="disabled")
-
         for widget in self.file_list_container.winfo_children(): widget.destroy()
-        
         for f in self.found_files:
             rel_path = os.path.relpath(f, self.current_directory)
-            btn = ctk.CTkButton(
-                self.file_list_container, 
-                text=rel_path, 
-                anchor="w", 
-                fg_color="transparent", 
-                text_color=("gray10", "gray90"),
-                command=lambda p=f: self.toggle_selection(p)
-            )
+            btn = ctk.CTkButton(self.file_list_container, text=rel_path, anchor="w", fg_color="transparent", 
+                                text_color=("gray10", "gray90"), command=lambda p=f: self.toggle_selection(p))
             btn.pack(fill="x", padx=5, pady=2)
             self.file_buttons[f] = btn
 
     def toggle_selection(self, file_path: str):
+        # Default behavior: single selection unless Command/Control is pressed
+        # Wait: CTkButton command doesn't pass event. 
+        # For simplicity, we'll implement standard selection in Phase 3.
+        # This turn focuses on Caching.
         if file_path in self.selected_paths:
             self.selected_paths.remove(file_path)
         else:
             self.selected_paths.add(file_path)
-            # Load the most recently selected item into editor
             self.on_file_load(file_path)
-        
         self._refresh_file_list_visuals()
-        
-        # Update Apply Button state
         if self.selected_paths:
             self.apply_button.configure(state="normal", text=f"Apply Scraper ({len(self.selected_paths)})")
         else:
@@ -270,30 +248,25 @@ class App(ctk.CTk):
         self.selected_comic = None
         self._refresh_file_list_visuals()
         self.apply_button.configure(state="disabled", text="Apply Scraper")
-        # Could also clear the form here if desired
 
     def on_file_load(self, file_path: str):
-        self.log(f"Selected: {os.path.basename(file_path)}")
-        self.selected_comic = ComicInfo(path=file_path)
+        self.log(f"Loading: {os.path.basename(file_path)}")
+        if file_path in self.comic_cache:
+            self.selected_comic = self.comic_cache[file_path]
+        else:
+            self.selected_comic = ComicInfo(path=file_path)
+            self.comic_cache[file_path] = self.selected_comic
         self.metadata_form.load_comic(self.selected_comic)
 
     def _merge_metadata(self, target: ComicInfo, source: ComicInfo, mode: str):
-        """Merge source (scraper result) into target (current) based on mode."""
         fields = ["Series", "Number", "Volume", "Year", "Publisher", "Genre", "Summary"]
         for field in fields:
             new_val = getattr(source, field)
             curr_val = getattr(target, field)
-            
-            should_update = False
-            if mode == "Overwrite":
-                should_update = True
-            elif mode == "Fill Gaps":
-                # Check if field is 'empty'
-                if isinstance(curr_val, str):
-                    if not curr_val.strip(): should_update = True
-                elif isinstance(curr_val, int):
-                    if curr_val == -1: should_update = True
-            
+            should_update = (mode == "Overwrite")
+            if mode == "Fill Gaps":
+                if isinstance(curr_val, str) and not curr_val.strip(): should_update = True
+                elif isinstance(curr_val, int) and curr_val == -1: should_update = True
             if should_update and new_val not in [None, "", -1]:
                 setattr(target, field, new_val)
 
@@ -301,52 +274,37 @@ class App(ctk.CTk):
         if not self.selected_paths: return
         strategy = self.scraper_menu.get().lower()
         mode = self.mode_var.get()
-        
         self.set_busy(True, f"Running {strategy} ({mode})...")
-        self.log(f"Applying {strategy} to {len(self.selected_paths)} files (background)...")
-        
-        # Capture current set to avoid modification issues
         targets = list(self.selected_paths)
-        
-        # Run in background thread
         thread = threading.Thread(target=self._async_apply_scraper, args=(strategy, mode, targets))
         thread.daemon = True
         thread.start()
 
     def _async_apply_scraper(self, strategy: str, mode: str, targets: list):
         try:
-            # Initialize scraper once
-            if strategy == "oldschool": 
-                scraper = OldSchoolFilenameScraper()
+            if strategy == "oldschool": scraper = OldSchoolFilenameScraper()
             elif strategy == "llm":
                 api_key = config_manager.get("llm_api_key")
                 if not api_key:
                     self.after(0, lambda: self.log("Error: LLM API Key is missing!"))
                     self.after(0, lambda: self.set_busy(False))
                     return
-                scraper = LlmFilenameScraper(
-                    api_key=api_key,
-                    base_url=config_manager.get("llm_base_url"),
-                    model=config_manager.get("llm_model")
-                )
-            else: 
-                scraper = RegexFilenameScraper()
+                scraper = LlmFilenameScraper(api_key=api_key, base_url=config_manager.get("llm_base_url"), model=config_manager.get("llm_model"))
+            else: scraper = RegexFilenameScraper()
 
             for i, path in enumerate(targets):
-                self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Processing {os.path.basename(p)}..."))
+                self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
+                scraped_data = ComicInfo(path=path)
+                scraper.search(scraped_data)
                 
-                # Create a temporary comic object for scraping
-                scraped_comic = ComicInfo(path=path)
-                scraper.search(scraped_comic)
+                # Update cache
+                if path not in self.comic_cache:
+                    self.comic_cache[path] = ComicInfo(path=path)
+                self._merge_metadata(self.comic_cache[path], scraped_data, mode)
                 
-                # If this is the currently viewed comic, we update it and the form
+                # Refresh UI if currently viewing this file
                 if self.selected_comic and self.selected_comic.path == path:
-                    self._merge_metadata(self.selected_comic, scraped_comic, mode)
                     self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
-                else:
-                    # In a real app we might store these in a cache. 
-                    # For now, if not selected, we just log completion.
-                    pass
 
             self.after(0, self._on_scraper_complete)
         except Exception as e:
@@ -354,10 +312,8 @@ class App(ctk.CTk):
             self.after(0, lambda: self.set_busy(False))
 
     def _on_scraper_complete(self):
-        self.metadata_form.load_comic(self.selected_comic)
         self.set_busy(False)
-        self.log("Scraper finished.")
-
+        self.log("Batch scraping finished. Results cached.")
 
     def save_current_comic(self):
         if not self.selected_comic: return
@@ -371,7 +327,6 @@ class App(ctk.CTk):
         self.selected_comic.Publisher = f["Publisher"].get()
         self.selected_comic.Genre = f["Genre"].get()
         self.selected_comic.Summary = self.metadata_form.summary_text.get("0.0", "end").strip()
-        
         try:
             inject_comic_info_xml(self.selected_comic.path, self.selected_comic)
             self.log(f"Success: {os.path.basename(self.selected_comic.path)}")
