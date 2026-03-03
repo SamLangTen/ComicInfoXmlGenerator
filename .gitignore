@@ -132,5 +132,7 @@ dmypy.json
 # IDEA
 .IDEA
 
+config.json
+
 # macOS
 .DS_Store
