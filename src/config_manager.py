@@ -10,7 +10,7 @@ class ConfigManager:
             "llm_api_key": "",
             "llm_model": "gpt-4o-mini",
             "appearance_mode": "System",
-            "default_scraper": "Regex"
+            "default_scraper": "Local"
         }
         self.config = self.defaults.copy()
         self.load()

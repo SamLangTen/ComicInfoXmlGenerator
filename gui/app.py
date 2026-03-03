@@ -144,9 +144,9 @@ class App(ctk.CTk):
         ctk.CTkButton(top_frame, text="Clear", command=self.clear_selection, width=60, fg_color="gray", hover_color="dim gray").pack(side="left", padx=5)
         ctk.CTkLabel(top_frame, text="|").pack(side="left", padx=5)
         
-        self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"], width=100)
+        self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Local", "LLM"], width=100)
         self.scraper_menu.pack(side="left", padx=5)
-        self.scraper_menu.set(config_manager.get("default_scraper"))
+        self.scraper_menu.set("Local")
         self.mode_var = ctk.StringVar(value="Overwrite")
         self.mode_switch = ctk.CTkSegmentedButton(top_frame, values=["Overwrite", "Fill Gaps"], variable=self.mode_var)
         self.mode_switch.pack(side="left", padx=10)
@@ -288,7 +288,8 @@ class App(ctk.CTk):
                     self.after(0, lambda: self.set_busy(False))
                     return
                 scraper = LlmFilenameScraper(api_key=api_key, base_url=config_manager.get("llm_base_url"), model=config_manager.get("llm_model"))
-            else: scraper = LocalFilenameScraper()
+            else: 
+                scraper = LocalFilenameScraper()
 
             for i, path in enumerate(targets):
                 self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
