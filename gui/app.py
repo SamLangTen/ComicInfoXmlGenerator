@@ -186,21 +186,32 @@ class App(ctk.CTk):
         self.log(f"Loading: {os.path.basename(file_path)}")
         self.selected_comic = ComicInfo(path=file_path)
         
-        # Inject current configuration into scrapers
+        # Get strategy and latest settings
         strategy = self.scraper_menu.get().lower()
-        if strategy == "oldschool": 
-            scraper = OldSchoolFilenameScraper()
-        elif strategy == "llm": 
-            scraper = LlmFilenameScraper(
-                api_key=config_manager.get("llm_api_key"),
-                base_url=config_manager.get("llm_base_url"),
-                model=config_manager.get("llm_model")
-            )
-        else: 
-            scraper = RegexFilenameScraper()
-        
-        scraper.search(self.selected_comic)
-        self.metadata_form.load_comic(self.selected_comic)
+        try:
+            if strategy == "oldschool": 
+                scraper = OldSchoolFilenameScraper()
+            elif strategy == "llm":
+                api_key = config_manager.get("llm_api_key")
+                if not api_key:
+                    self.log("Error: LLM API Key is missing in Settings!")
+                    scraper = RegexFilenameScraper()
+                else:
+                    scraper = LlmFilenameScraper(
+                        api_key=api_key,
+                        base_url=config_manager.get("llm_base_url"),
+                        model=config_manager.get("llm_model")
+                    )
+            else: 
+                scraper = RegexFilenameScraper()
+            
+            scraper.search(self.selected_comic)
+            self.metadata_form.load_comic(self.selected_comic)
+        except Exception as e:
+            self.log(f"Scraper Error ({strategy}): {e}")
+            # Fallback
+            RegexFilenameScraper().search(self.selected_comic)
+            self.metadata_form.load_comic(self.selected_comic)
 
     def save_current_comic(self):
         if not self.selected_comic: return
