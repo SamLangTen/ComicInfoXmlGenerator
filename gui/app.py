@@ -1,5 +1,7 @@
 import customtkinter as ctk
 import os
+from src.scanner import scan_archives
+from tkinter import filedialog
 
 try:
     ctk.set_appearance_mode("Dark")
@@ -12,6 +14,8 @@ class App(ctk.CTk):
 
         self.title("ComicInfoXmlGenerator")
         self.geometry(f"{1100}x580")
+        self.current_directory = None
+        self.found_files = []
 
         # Configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
@@ -26,7 +30,7 @@ class App(ctk.CTk):
         self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="CIXG", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         
-        self.scan_button = ctk.CTkButton(self.sidebar_frame, text="Scan Directory", command=self.sidebar_button_event)
+        self.scan_button = ctk.CTkButton(self.sidebar_frame, text="Scan Directory", command=self.browse_directory)
         self.scan_button.grid(row=1, column=0, padx=20, pady=10)
         
         self.appearance_mode_label = ctk.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
@@ -41,6 +45,10 @@ class App(ctk.CTk):
         self.file_list_label = ctk.CTkLabel(self.file_list_frame, text="Comic Archives", font=ctk.CTkFont(size=16, weight="bold"))
         self.file_list_label.pack(padx=20, pady=10)
 
+        # Container for actual file items (to be filled dynamically)
+        self.file_list_container = ctk.CTkScrollableFrame(self.file_list_frame, label_text="")
+        self.file_list_container.pack(expand=True, fill="both", padx=10, pady=10)
+
         self.details_frame = ctk.CTkFrame(self, width=250)
         self.details_frame.grid(row=0, column=2, rowspan=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.details_label = ctk.CTkLabel(self.details_frame, text="Metadata Details", font=ctk.CTkFont(size=16, weight="bold"))
@@ -53,8 +61,33 @@ class App(ctk.CTk):
         # Set default values
         self.appearance_mode_optionemenu.set("Dark")
 
-    def sidebar_button_event(self):
-        print("sidebar_button click")
+    def log(self, message: str):
+        self.log_textbox.insert("end", f"{message}\n")
+        self.log_textbox.see("end")
+
+    def browse_directory(self):
+        directory = filedialog.askdirectory()
+        if directory:
+            self.current_directory = directory
+            self.log(f"Selected directory: {directory}")
+            self.scan()
+
+    def scan(self):
+        if not self.current_directory:
+            return
+        
+        self.log("Scanning...")
+        self.found_files = scan_archives(self.current_directory)
+        self.log(f"Found {len(self.found_files)} comic archives.")
+        
+        # Clear existing list items (simplified for now)
+        for widget in self.file_list_container.winfo_children():
+            widget.destroy()
+
+        for f in self.found_files:
+            rel_path = os.path.relpath(f, self.current_directory)
+            btn = ctk.CTkButton(self.file_list_container, text=rel_path, anchor="w", fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"))
+            btn.pack(fill="x", padx=5, pady=2)
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
