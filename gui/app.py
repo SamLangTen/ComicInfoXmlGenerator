@@ -298,19 +298,24 @@ class App(ctk.CTk):
                 setattr(target, field, new_val)
 
     def apply_scraper(self):
-        if not self.selected_comic: return
+        if not self.selected_paths: return
         strategy = self.scraper_menu.get().lower()
-
-        self.set_busy(True, f"Running {strategy} scraper...")
-        self.log(f"Applying {strategy} scraper (background)...")
-
+        mode = self.mode_var.get()
+        
+        self.set_busy(True, f"Running {strategy} ({mode})...")
+        self.log(f"Applying {strategy} to {len(self.selected_paths)} files (background)...")
+        
+        # Capture current set to avoid modification issues
+        targets = list(self.selected_paths)
+        
         # Run in background thread
-        thread = threading.Thread(target=self._async_apply_scraper, args=(strategy,))
+        thread = threading.Thread(target=self._async_apply_scraper, args=(strategy, mode, targets))
         thread.daemon = True
         thread.start()
 
-    def _async_apply_scraper(self, strategy: str):
+    def _async_apply_scraper(self, strategy: str, mode: str, targets: list):
         try:
+            # Initialize scraper once
             if strategy == "oldschool": 
                 scraper = OldSchoolFilenameScraper()
             elif strategy == "llm":
@@ -327,9 +332,22 @@ class App(ctk.CTk):
             else: 
                 scraper = RegexFilenameScraper()
 
-            scraper.search(self.selected_comic)
+            for i, path in enumerate(targets):
+                self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Processing {os.path.basename(p)}..."))
+                
+                # Create a temporary comic object for scraping
+                scraped_comic = ComicInfo(path=path)
+                scraper.search(scraped_comic)
+                
+                # If this is the currently viewed comic, we update it and the form
+                if self.selected_comic and self.selected_comic.path == path:
+                    self._merge_metadata(self.selected_comic, scraped_comic, mode)
+                    self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
+                else:
+                    # In a real app we might store these in a cache. 
+                    # For now, if not selected, we just log completion.
+                    pass
 
-            # Update UI on main thread
             self.after(0, self._on_scraper_complete)
         except Exception as e:
             self.after(0, lambda err=e: self.log(f"Scraper Error: {err}"))
