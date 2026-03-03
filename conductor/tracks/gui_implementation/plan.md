@@ -1,24 +1,24 @@
 # Implementation Plan: GUI Implementation
 
 ## Phase 1: Setup and Basic Layout
-- [ ] Finalize UI tech stack in `tech-stack.md` and `requirements.txt` [ ]
-- [ ] Create basic window structure with `CustomTkinter` [ ]
-- [ ] Implement directory browsing and scanning integration [ ]
+- [x] Finalize UI tech stack in `tech-stack.md` and `requirements.txt` [d23c486]
+- [x] Create basic window structure with `CustomTkinter` [a547fcc]
+- [x] Implement directory browsing and scanning integration [4c57e1b]
 
 ## Phase 2: File List and Selection
-- [ ] Implement the comic file list widget [ ]
-- [ ] Enable item selection and detail loading [ ]
+- [x] Implement the comic file list widget [4c57e1b, 23b924f]
+- [x] Enable item selection and detail loading [23b924f]
 
 ## Phase 3: Metadata Editor
-- [ ] Build the metadata editing form [ ]
-- [ ] Connect form fields to `ComicInfo` objects [ ]
-- [ ] Support manual save/inject action [ ]
+- [x] Build the metadata editing form [0ab031b]
+- [x] Connect form fields to `ComicInfo` objects [0ab031b]
+- [x] Support manual save/inject action [0ab031b]
 
 ## Phase 4: Scraper Integration
-- [ ] Add scraper selection UI [ ]
-- [ ] Implement background processing for scraping to keep UI responsive [ ]
+- [x] Add scraper selection UI [0ab031b]
+- [x] Implement background processing for scraping to keep UI responsive [0ab031b]
 
 ## Phase 5: Polishing and Testing
-- [ ] Refine the visual style and themes [ ]
-- [ ] Add validation and error message boxes [ ]
-- [ ] Final verification and checkpoint [ ]
+- [x] Refine the visual style and themes [0ab031b]
+- [x] Add validation and error message boxes [0ab031b]
+- [x] Final verification and checkpoint [0ab031b]
