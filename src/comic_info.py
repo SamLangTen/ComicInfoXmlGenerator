@@ -53,6 +53,26 @@ class ComicInfo:
     Pages: List[ComicPageInfo] = field(default_factory=list)
     path: Optional[str] = None
     Year: int = -1
+    Month: int = -1
+    Day: int = -1
+    Writer: str = ""
+    Penciller: str = ""
+    Inker: str = ""
+    Colorist: str = ""
+    Letterer: str = ""
+    CoverArtist: str = ""
+    Editor: str = ""
+    Imprint: str = ""
+    AgeRating: str = ""
+    Characters: str = ""
+    Teams: str = ""
+    Locations: str = ""
+    ScanInformation: str = ""
+    StoryArc: str = ""
+    SeriesGroup: str = ""
+    Web: str = ""
+    BlackAndWhite: str = "Unknown" # Yes, No, Unknown
+    Manga: str = "Unknown" # Yes, No, Unknown
 
     def to_xml(self) -> ET.Element:
         root = ET.Element("ComicInfo")
