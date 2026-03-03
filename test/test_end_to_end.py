@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import zipfile
 from src.scanner import scan_archives
-from src.scraper import FilenameScraper
+from src.scraper import LocalFilenameScraper
 from src.comic_info import ComicInfo
 from src.archive import inject_comic_info_xml
 
@@ -27,7 +27,7 @@ class TestEndToEnd(unittest.TestCase):
         
         # 2. Scrape from filename
         comic = ComicInfo(path=found[0])
-        scraper = FilenameScraper()
+        scraper = LocalFilenameScraper()
         scraper.search(comic)
         
         self.assertEqual(comic.Series, "The Amazing Spider-Man")

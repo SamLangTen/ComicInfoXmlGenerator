@@ -6,14 +6,11 @@ from src.comic_info import ComicInfo
 class LocalFilenameScraper:
     """
     Consolidated scraper that extracts comic metadata from filenames.
-    It prefers directory-context-based inference (Common Prefix/Suffix)
-    and falls back to Regex pattern matching if only one file exists.
     """
 
     def __init__(self) -> None:
-        # Regex patterns for fallback
         self.re_volume = re.compile(r'[vV]ol(ume)?\.?\s?(\d+)|[vV](\d+)')
-        self.re_number = re.compile(r'#(\d+)|(?<=\s)(\d+)(?=\s|\.|\)|$)|(?<=\w)(\d+)(?=\s|\.|\)|$)') 
+        self.re_number = re.compile(r'#(\d+)|(?<=\s)(\d+)(?=\s|\.|\)|$)|(?<=\D)(\d+)(?=\D|$)') 
         self.re_year = re.compile(r'\((\d{4})\)')
 
     def search(self, comic: ComicInfo) -> ComicInfo:
@@ -23,7 +20,7 @@ class LocalFilenameScraper:
         directory = os.path.dirname(comic.path)
         filename = os.path.basename(comic.path)
         
-        # 1. Try Directory-Based Inference (OldSchool logic)
+        # 1. Try Directory-Based Inference
         extensions = {'.cbz', '.cbr', '.cb7', '.zip', '.rar'}
         all_files = sorted([
             f for f in os.listdir(directory)
@@ -33,60 +30,62 @@ class LocalFilenameScraper:
         if len(all_files) >= 2:
             prefix = self._get_common_prefix(all_files)
             suffix = self._get_common_suffix(all_files)
-            
-            # Refine prefix to separate number
-            while prefix and prefix[-1].isdigit():
-                prefix = prefix[:-1]
+            temp_prefix = prefix
+            while temp_prefix and temp_prefix[-1].isdigit():
+                temp_prefix = temp_prefix[:-1]
 
-            variable = filename[len(prefix):len(filename)-len(suffix)]
+            variable = filename[len(temp_prefix):len(filename)-len(suffix)]
             variable = variable.lstrip(" #-_")
-            
             num_match = re.search(r'(\d+)', variable)
-            if num_match:
-                comic.Number = num_match.group(1)
-            else:
-                comic.Number = variable.strip()
+            if num_match: comic.Number = num_match.group(1)
+            else: comic.Number = variable.strip()
 
-            series = prefix.strip()
-            # Clean up trailing separators/volume markers
+            series = temp_prefix.strip()
             series = re.sub(r'(\s+[vV](ol(ume)?\.?)?|#+)$', '', series, flags=re.IGNORECASE)
             series = series.rstrip(" #-_").strip()
             series = re.sub(r'^\[.*?\]', '', series).strip()
-            comic.Series = series
-
-            # Year usually stays in basename or suffix
-            year_match = self.re_year.search(filename)
-            if year_match:
-                comic.Year = int(year_match.group(1))
             
-            # If we successfully got a series, we are happy
-            if comic.Series:
+            if series:
+                comic.Series = series
+                year_match = self.re_year.search(filename)
+                if year_match: comic.Year = int(year_match.group(1))
                 return comic
 
-        # 2. Fallback to Regex-Only (Regex logic)
+        # 2. Fallback to Regex-Only (Simple sequential)
         basename = os.path.splitext(filename)[0]
         
-        match_year = self.re_year.search(basename)
-        if match_year:
-            comic.Year = int(match_year.group(1))
-            basename = basename.replace(match_year.group(0), "")
+        # Extract Year
+        my = self.re_year.search(basename)
+        if my: comic.Year = int(my.group(1))
+        
+        # Extract Volume
+        mv = self.re_volume.search(basename)
+        if mv: comic.Volume = int(mv.group(2) or mv.group(3))
+        
+        # Extract Number
+        mn = self.re_number.search(basename)
+        if mn: comic.Number = mn.group(1) or mn.group(2) or mn.group(3)
+
+        # Simple Series extraction: take everything before the first number or tag
+        # We look for the first occurrence of volume marker, issue marker, or year
+        potential_splits = []
+        if my: potential_splits.append(my.start())
+        if mv: potential_splits.append(mv.start())
+        if mn: potential_splits.append(mn.start())
+        
+        # Also look for bracket/parenthesis tags
+        bracket = re.search(r'[\[\(]', basename)
+        if bracket: potential_splits.append(bracket.start())
+        
+        split_pos = min(potential_splits) if potential_splits else len(basename)
+        series = basename[:split_pos].strip()
+        
+        # If the result is empty (e.g. filename starts with number), fallback
+        if not series:
+            series = re.sub(r'\[.*?\]|\(.*?\)', '', basename).strip()
+            series = re.sub(r'#?\d+', '', series).strip()
             
-        match_volume = self.re_volume.search(basename)
-        if match_volume:
-            vol_str = match_volume.group(2) or match_volume.group(3)
-            comic.Volume = int(vol_str)
-            basename = basename.replace(match_volume.group(0), "")
-            
-        match_number = self.re_number.search(basename)
-        if match_number:
-            num_str = match_number.group(1) or match_number.group(2) or match_number.group(3)
-            comic.Number = num_str
-            basename = basename.replace(match_number.group(0), "")
-            
-        series = re.sub(r'\[.*?\]|\(.*?\)', '', basename).strip()
-        series = re.sub(r'\s+', ' ', series)
-        series = series.rstrip(" #-_").strip()
-        comic.Series = series
+        comic.Series = series.strip(" #-_")
         
         return comic
 

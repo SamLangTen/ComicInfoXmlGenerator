@@ -41,15 +41,13 @@ class LlmFilenameScraper:
             }
 
             # Log prompt for debugging
-            print("
-" + "="*50)
+            print("\n" + "="*50)
             print("LLM SCRAPER REQUEST")
             print(f"URL: {self.base_url}/chat/completions")
             print(f"Model: {self.model}")
             print(f"System Prompt: {self.system_prompt}")
             print(f"User Message: Filename: {filename}")
-            print("="*50 + "
-")
+            print("="*50 + "\n")
 
             response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30.0)
             response.raise_for_status()
@@ -65,7 +63,5 @@ class LlmFilenameScraper:
 
         except Exception as e:
             print(f"LLM Scraper error: {e}")
-            # We don't fallback to LocalScraper here to keep responsibilities separate.
-            # The caller (e.g. App) can choose to fallback.
 
         return comic
