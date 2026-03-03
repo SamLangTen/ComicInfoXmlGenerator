@@ -149,9 +149,32 @@ class App(ctk.CTk):
         self.metadata_form = MetadataForm(tab)
         self.metadata_form.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
-        # Bottom Log
+        # Bottom Log and Status
         self.log_textbox = ctk.CTkTextbox(tab, height=100)
-        self.log_textbox.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.log_textbox.grid(row=2, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="ew")
+
+        # Status and Progress Area
+        self.status_frame = ctk.CTkFrame(tab, height=30, fg_color="transparent")
+        self.status_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=(5, 10), sticky="ew")
+        
+        self.status_label = ctk.CTkLabel(self.status_frame, text="Ready", font=ctk.CTkFont(size=12))
+        self.status_label.pack(side="left", padx=5)
+        
+        self.progress_bar = ctk.CTkProgressBar(self.status_frame, width=200)
+        self.progress_bar.pack(side="right", padx=10)
+        self.progress_bar.set(0)
+        self.progress_bar.configure(mode="indeterminate")
+        self.progress_bar.pack_forget() # Hide by default
+
+    def set_busy(self, busy: bool, message: str = "Processing..."):
+        if busy:
+            self.status_label.configure(text=message)
+            self.progress_bar.pack(side="right", padx=10)
+            self.progress_bar.start()
+        else:
+            self.status_label.configure(text="Ready")
+            self.progress_bar.stop()
+            self.progress_bar.pack_forget()
 
     def _setup_settings_tab(self):
         tab = self.tabview.tab("Settings")

@@ -155,14 +155,24 @@ class LlmFilenameScraper:
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
             }
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": f"Filename: {filename}"}
+            ]
             payload = {
                 "model": self.model,
-                "messages": [
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": f"Filename: {filename}"}
-                ],
+                "messages": messages,
                 "response_format": {"type": "json_object"}
             }
+
+            # Log prompt for debugging
+            print("\n" + "="*50)
+            print("LLM SCRAPER REQUEST")
+            print(f"URL: {self.base_url}/chat/completions")
+            print(f"Model: {self.model}")
+            print(f"System Prompt: {self.system_prompt}")
+            print(f"User Message: Filename: {filename}")
+            print("="*50 + "\n")
 
             response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30.0)
             response.raise_for_status()
