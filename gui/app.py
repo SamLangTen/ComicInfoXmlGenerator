@@ -112,10 +112,12 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("ComicInfoXmlGenerator")
-        self.geometry(f"{1100}x700")
+        self.geometry(f"{1100}x750")
         self.current_directory = None
         self.found_files = []
-        self.selected_comic = None
+        self.selected_paths = set() # Store multiple selected paths
+        self.file_buttons = {} # path -> button widget
+        self.selected_comic = None # Primary comic for editor
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -137,8 +139,11 @@ class App(ctk.CTk):
         # Top tools
         top_frame = ctk.CTkFrame(tab)
         top_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
-        ctk.CTkButton(top_frame, text="Scan Directory", command=self.browse_directory).pack(side="left", padx=10)
+        ctk.CTkButton(top_frame, text="Scan Directory", command=self.browse_directory, width=120).pack(side="left", padx=5)
         
+        ctk.CTkButton(top_frame, text="Select All", command=self.select_all, width=80, fg_color="gray", hover_color="dim gray").pack(side="left", padx=5)
+        ctk.CTkButton(top_frame, text="Clear", command=self.clear_selection, width=60, fg_color="gray", hover_color="dim gray").pack(side="left", padx=5)
+
         ctk.CTkLabel(top_frame, text="|").pack(side="left", padx=5)
         
         self.scraper_menu = ctk.CTkOptionMenu(top_frame, values=["Regex", "OldSchool", "LLM"])
@@ -206,17 +211,66 @@ class App(ctk.CTk):
         self.log("Scanning...")
         self.found_files = scan_archives(self.current_directory)
         self.log(f"Found {len(self.found_files)} archives.")
+        
+        # Reset selection state
+        self.selected_paths.clear()
+        self.file_buttons.clear()
+        self.apply_button.configure(state="disabled")
+
         for widget in self.file_list_container.winfo_children(): widget.destroy()
+        
         for f in self.found_files:
             rel_path = os.path.relpath(f, self.current_directory)
-            btn = ctk.CTkButton(self.file_list_container, text=rel_path, anchor="w", fg_color="transparent", 
-                                command=lambda p=f: self.on_file_select(p))
+            btn = ctk.CTkButton(
+                self.file_list_container, 
+                text=rel_path, 
+                anchor="w", 
+                fg_color="transparent", 
+                text_color=("gray10", "gray90"),
+                command=lambda p=f: self.toggle_selection(p)
+            )
             btn.pack(fill="x", padx=5, pady=2)
+            self.file_buttons[f] = btn
 
-    def on_file_select(self, file_path: str):
+    def toggle_selection(self, file_path: str):
+        if file_path in self.selected_paths:
+            self.selected_paths.remove(file_path)
+        else:
+            self.selected_paths.add(file_path)
+            # Load the most recently selected item into editor
+            self.on_file_load(file_path)
+        
+        self._refresh_file_list_visuals()
+        
+        # Update Apply Button state
+        if self.selected_paths:
+            self.apply_button.configure(state="normal", text=f"Apply Scraper ({len(self.selected_paths)})")
+        else:
+            self.apply_button.configure(state="disabled", text="Apply Scraper")
+
+    def _refresh_file_list_visuals(self):
+        for path, btn in self.file_buttons.items():
+            if path in self.selected_paths:
+                btn.configure(fg_color=("#3B8ED0", "#1f538d"), text_color="white")
+            else:
+                btn.configure(fg_color="transparent", text_color=("gray10", "gray90"))
+
+    def select_all(self):
+        if not self.found_files: return
+        self.selected_paths = set(self.found_files)
+        self._refresh_file_list_visuals()
+        self.apply_button.configure(state="normal", text=f"Apply Scraper ({len(self.selected_paths)})")
+
+    def clear_selection(self):
+        self.selected_paths.clear()
+        self.selected_comic = None
+        self._refresh_file_list_visuals()
+        self.apply_button.configure(state="disabled", text="Apply Scraper")
+        # Could also clear the form here if desired
+
+    def on_file_load(self, file_path: str):
         self.log(f"Selected: {os.path.basename(file_path)}")
         self.selected_comic = ComicInfo(path=file_path)
-        self.apply_button.configure(state="normal")
         self.metadata_form.load_comic(self.selected_comic)
 
     def apply_scraper(self):
