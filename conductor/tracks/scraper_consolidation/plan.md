@@ -12,5 +12,5 @@
 
 ## Phase 3: Testing and Cleanup
 - [x] Refactor `test/test_filename_scraper.py` to target new classes [3ae5107]
-- [~] Verify all 20 existing tests pass [ ]
-- [ ] Final verification and checkpoint [ ]
+- [x] Verify all existing tests pass [482606d]
+- [~] Final verification and checkpoint [ ]
