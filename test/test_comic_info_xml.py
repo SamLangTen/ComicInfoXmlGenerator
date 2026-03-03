@@ -41,5 +41,60 @@ class TestComicInfoXml(unittest.TestCase):
         self.assertEqual(new_comic.Pages[0].Image, 0)
         self.assertEqual(new_comic.Pages[0].Type, "FrontCover")
 
+    def test_extended_fields_serialization_roundtrip(self):
+        comic = ComicInfo(
+            Series="Spider-Man",
+            Number="1",
+            Writer="Stan Lee",
+            Penciller="Steve Ditko",
+            Inker="Steve Ditko",
+            Colorist="Stan Goldberg",
+            Letterer="Artie Simek",
+            CoverArtist="Steve Ditko",
+            Editor="Stan Lee",
+            Month=8,
+            Day=15,
+            Imprint="Marvel Imprint",
+            AgeRating="Teen",
+            Characters="Spider-Man, Uncle Ben",
+            Teams="Avengers",
+            Locations="New York",
+            ScanInformation="Scanned by X",
+            StoryArc="Origin",
+            SeriesGroup="Marvel Universe",
+            Web="https://example.com",
+            BlackAndWhite="No",
+            Manga="No"
+        )
+        
+        # Serialize
+        xml_str = comic.to_xml_string()
+        
+        # Deserialize
+        new_comic = ComicInfo.from_xml_string(xml_str)
+        
+        # Verify
+        self.assertEqual(new_comic.Series, comic.Series)
+        self.assertEqual(new_comic.Writer, comic.Writer)
+        self.assertEqual(new_comic.Penciller, comic.Penciller)
+        self.assertEqual(new_comic.Inker, comic.Inker)
+        self.assertEqual(new_comic.Colorist, comic.Colorist)
+        self.assertEqual(new_comic.Letterer, comic.Letterer)
+        self.assertEqual(new_comic.CoverArtist, comic.CoverArtist)
+        self.assertEqual(new_comic.Editor, comic.Editor)
+        self.assertEqual(new_comic.Month, comic.Month)
+        self.assertEqual(new_comic.Day, comic.Day)
+        self.assertEqual(new_comic.Imprint, comic.Imprint)
+        self.assertEqual(new_comic.AgeRating, comic.AgeRating)
+        self.assertEqual(new_comic.Characters, comic.Characters)
+        self.assertEqual(new_comic.Teams, comic.Teams)
+        self.assertEqual(new_comic.Locations, comic.Locations)
+        self.assertEqual(new_comic.ScanInformation, comic.ScanInformation)
+        self.assertEqual(new_comic.StoryArc, comic.StoryArc)
+        self.assertEqual(new_comic.SeriesGroup, comic.SeriesGroup)
+        self.assertEqual(new_comic.Web, comic.Web)
+        self.assertEqual(new_comic.BlackAndWhite, comic.BlackAndWhite)
+        self.assertEqual(new_comic.Manga, comic.Manga)
+
 if __name__ == "__main__":
     unittest.main()
