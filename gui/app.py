@@ -148,8 +148,40 @@ class MetadataForm(ctk.CTkFrame):
             else:
                 widget = ctk.CTkEntry(tab)
                 widget.grid(row=row, column=1, padx=10, pady=2, sticky="ew")
+                # Bind validation
+                if field_type == "int":
+                    widget.bind("<KeyRelease>", lambda e, w=widget: self._validate_int(w))
             
             self.fields[label_text] = widget
+
+    def _validate_int(self, widget: ctk.CTkEntry):
+        val = widget.get().strip()
+        if not val or val == "-1":
+            widget.configure(border_color=("gray70", "gray30")) # Reset to default
+            return True
+        
+        is_valid = val.isdigit() or (val.startswith('-') and val[1:].isdigit())
+        if is_valid:
+            widget.configure(border_color=("gray70", "gray30"))
+        else:
+            widget.configure(border_color="red")
+        
+        self._update_save_button_state()
+        return is_valid
+
+    def _update_save_button_state(self):
+        all_valid = True
+        for name, widget in self.fields.items():
+            if isinstance(widget, ctk.CTkEntry):
+                # We only mark as invalid if border is red
+                if widget.cget("border_color") == "red":
+                    all_valid = False
+                    break
+        
+        if all_valid:
+            self.save_button.configure(state="normal")
+        else:
+            self.save_button.configure(state="disabled")
 
     def load_comic(self, comic: ComicInfo):
         for field_name, widget in self.fields.items():
