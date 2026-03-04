@@ -89,6 +89,12 @@ class LocalFilenameScraper:
         
         return comic
 
+    def search_batch(self, comics: List[ComicInfo], log_callback: Optional[Callable[[str], None]] = None) -> List[ComicInfo]:
+        """Default batch implementation: loop through individual searches."""
+        for comic in comics:
+            self.search(comic, log_callback=log_callback)
+        return comics
+
     def _get_common_prefix(self, strings: List[str]) -> str:
         if not strings: return ""
         s1 = min(strings); s2 = max(strings)

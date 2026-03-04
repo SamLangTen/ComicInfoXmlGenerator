@@ -5,6 +5,7 @@ from dataclasses import asdict
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
+from src.scraper import LocalFilenameScraper, LlmFilenameScraper
 
 app = FastAPI(title="ComicInfoXmlGenerator API")
 
@@ -61,4 +62,31 @@ async def update_metadata(data: Dict[str, Any]):
         if hasattr(comic, key) and key != "path":
             setattr(comic, key, value)
             
+    return {"status": "success"}
+
+class ScrapeRequest(BaseModel):
+    paths: List[str]
+    strategy: str # local, llm, regex
+
+@app.post("/api/scrape")
+async def scrape(request: ScrapeRequest):
+    if request.strategy.lower() == "llm":
+        scraper = LlmFilenameScraper(
+            api_key=config_manager.get("llm_api_key"),
+            base_url=config_manager.get("llm_base_url"),
+            model=config_manager.get("llm_model")
+        )
+    else:
+        scraper = LocalFilenameScraper()
+    
+    # Get comics from cache
+    comics_to_scrape = []
+    for p in request.paths:
+        if p not in session_cache:
+            session_cache[p] = ComicInfo(path=p)
+        comics_to_scrape.append(session_cache[p])
+    
+    # Perform batch search
+    scraper.search_batch(comics_to_scrape)
+    
     return {"status": "success"}
