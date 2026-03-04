@@ -373,15 +373,53 @@ class App(ctk.CTk):
     def save_current_comic(self):
         if not self.selected_comic: return
         f = self.metadata_form.fields
-        self.selected_comic.Series = f["Series"].get()
-        self.selected_comic.Number = f["Number"].get()
-        vol = f["Volume"].get()
-        self.selected_comic.Volume = int(vol) if vol.isdigit() else -1
-        year = f["Year"].get()
-        self.selected_comic.Year = int(year) if year.isdigit() else -1
-        self.selected_comic.Publisher = f["Publisher"].get()
-        self.selected_comic.Genre = f["Genre"].get()
-        self.selected_comic.Summary = self.metadata_form.summary_text.get("0.0", "end").strip()
+        
+        # Helper to get value from widget
+        def get_val(name):
+            w = f[name]
+            if isinstance(w, ctk.CTkTextbox):
+                return w.get("0.0", "end").strip()
+            return w.get().strip()
+
+        def get_int(name):
+            val = get_val(name)
+            return int(val) if val.isdigit() or (val.startswith('-') and val[1:].isdigit()) else -1
+
+        # General
+        self.selected_comic.Title = get_val("Title")
+        self.selected_comic.Series = get_val("Series")
+        self.selected_comic.Number = get_val("Number")
+        self.selected_comic.Volume = get_int("Volume")
+        self.selected_comic.Year = get_int("Year")
+        self.selected_comic.Month = get_int("Month")
+        self.selected_comic.Day = get_int("Day")
+        self.selected_comic.Summary = get_val("Summary")
+
+        # Credits
+        self.selected_comic.Writer = get_val("Writer")
+        self.selected_comic.Penciller = get_val("Penciller")
+        self.selected_comic.Inker = get_val("Inker")
+        self.selected_comic.Colorist = get_val("Colorist")
+        self.selected_comic.Letterer = get_val("Letterer")
+        self.selected_comic.CoverArtist = get_val("CoverArtist")
+        self.selected_comic.Editor = get_val("Editor")
+
+        # Tags
+        self.selected_comic.Genre = get_val("Genre")
+        self.selected_comic.Characters = get_val("Characters")
+        self.selected_comic.Teams = get_val("Teams")
+        self.selected_comic.Locations = get_val("Locations")
+        self.selected_comic.StoryArc = get_val("StoryArc")
+        self.selected_comic.SeriesGroup = get_val("SeriesGroup")
+
+        # Publishing
+        self.selected_comic.Publisher = get_val("Publisher")
+        self.selected_comic.Imprint = get_val("Imprint")
+        self.selected_comic.AgeRating = get_val("AgeRating")
+        self.selected_comic.Web = get_val("Web")
+        self.selected_comic.BlackAndWhite = get_val("BlackAndWhite")
+        self.selected_comic.Manga = get_val("Manga")
+
         try:
             inject_comic_info_xml(self.selected_comic.path, self.selected_comic)
             self.log(f"Success: {os.path.basename(self.selected_comic.path)}")
