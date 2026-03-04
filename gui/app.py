@@ -380,18 +380,35 @@ class App(ctk.CTk):
                     self.after(0, lambda: self.set_busy(False))
                     return
                 scraper = LlmFilenameScraper(api_key=api_key, base_url=config_manager.get("llm_base_url"), model=config_manager.get("llm_model"))
+                
+                # Prepare all comic objects from cache
+                comics_to_process = []
+                for path in targets:
+                    if path not in self.comic_cache:
+                        self.comic_cache[path] = ComicInfo(path=path)
+                    comics_to_process.append(self.comic_cache[path])
+                
+                # Perform batch search
+                self.after(0, lambda: self.log(f"Sending batch request for {len(targets)} files..."))
+                
+                # We need a way to track internal progress if LlmScraper doesn't call our log
+                # For now, we'll just run the batch.
+                scraper.search_batch(comics_to_process)
+                
+                # Refresh UI if currently viewing one of these
+                if self.selected_comic and self.selected_comic.path in targets:
+                    self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
             else: 
                 scraper = LocalFilenameScraper()
-
-            for i, path in enumerate(targets):
-                self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
-                scraped_data = ComicInfo(path=path)
-                scraper.search(scraped_data)
-                if path not in self.comic_cache:
-                    self.comic_cache[path] = ComicInfo(path=path)
-                self._merge_metadata(self.comic_cache[path], scraped_data, mode)
-                if self.selected_comic and self.selected_comic.path == path:
-                    self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
+                for i, path in enumerate(targets):
+                    self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
+                    scraped_data = ComicInfo(path=path)
+                    scraper.search(scraped_data)
+                    if path not in self.comic_cache:
+                        self.comic_cache[path] = ComicInfo(path=path)
+                    self._merge_metadata(self.comic_cache[path], scraped_data, mode)
+                    if self.selected_comic and self.selected_comic.path == path:
+                        self.after(0, lambda: self.metadata_form.load_comic(self.selected_comic))
 
             self.after(0, self._on_scraper_complete)
         except Exception as e:

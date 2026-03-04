@@ -18,22 +18,32 @@ def scan_command(args):
     print(f"Found {len(files)} comic(s) in {args.directory}:")
     for f in files:
         print(f"  - {os.path.relpath(f, args.directory)}")
-
 def generate_command(args):
     files = scan_archives(args.directory)
     scraper = get_scraper(args.scraper)
-    
+
     if args.dry_run:
         print(f"--- Dry-run mode: Scanning {len(files)} file(s) ---")
     else:
         print(f"--- Processing {len(files)} file(s) ---")
-        
-    for f in files:
-        comic = ComicInfo(path=f)
-        scraper.search(comic)
-        
+
+    # 1. Initialize objects
+    comics = [ComicInfo(path=f) for f in files]
+
+    # 2. Batch scrape if using LLM
+    if args.scraper == "llm":
+        print(f"Performing batch LLM identification for {len(comics)} files...")
+        scraper.search_batch(comics)
+
+    # 3. Process each file (local scrape if needed + manual overrides + injection)
+    for comic in comics:
+        if args.scraper != "llm":
+            scraper.search(comic)
+
         # Override with CLI flags if provided
         if args.title: comic.Title = args.title
+...
+
         if args.series: comic.Series = args.series
         if args.number: comic.Number = args.number
         if args.volume is not None: comic.Volume = args.volume
