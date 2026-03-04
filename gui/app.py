@@ -72,37 +72,97 @@ class SettingsForm(ctk.CTkFrame):
 class MetadataForm(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        
+        self.tabview = ctk.CTkTabview(self)
+        self.tabview.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        self.tabview.add("General")
+        self.tabview.add("Credits")
+        self.tabview.add("Tags & Details")
+        self.tabview.add("Publishing")
+        
         self.fields = {}
-        row = 0
-        for label_text in ["Series", "Number", "Volume", "Year", "Publisher", "Genre"]:
-            lbl = ctk.CTkLabel(self, text=label_text, anchor="w")
-            lbl.grid(row=row, column=0, padx=10, pady=5, sticky="w")
-            entry = ctk.CTkEntry(self)
-            entry.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
-            self.fields[label_text] = entry
-            row += 1
-        self.summary_text = ctk.CTkTextbox(self, height=120)
-        self.summary_text.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
-        row += 1
+        
+        # General Tab
+        self._setup_tab("General", [
+            ("Title", "entry"),
+            ("Series", "entry"),
+            ("Number", "entry"),
+            ("Volume", "entry"),
+            ("Year", "entry"),
+            ("Month", "entry"),
+            ("Day", "entry"),
+            ("Summary", "text")
+        ])
+        
+        # Credits Tab
+        self._setup_tab("Credits", [
+            ("Writer", "entry"),
+            ("Penciller", "entry"),
+            ("Inker", "entry"),
+            ("Colorist", "entry"),
+            ("Letterer", "entry"),
+            ("CoverArtist", "entry"),
+            ("Editor", "entry")
+        ])
+        
+        # Tags & Details Tab
+        self._setup_tab("Tags & Details", [
+            ("Genre", "entry"),
+            ("Characters", "entry"),
+            ("Teams", "entry"),
+            ("Locations", "entry"),
+            ("StoryArc", "entry"),
+            ("SeriesGroup", "entry")
+        ])
+        
+        # Publishing Tab
+        self._setup_tab("Publishing", [
+            ("Publisher", "entry"),
+            ("Imprint", "entry"),
+            ("AgeRating", "entry"),
+            ("Web", "entry"),
+            ("BlackAndWhite", "enum"),
+            ("Manga", "enum")
+        ])
+
         self.save_button = ctk.CTkButton(self, text="Inject Metadata", command=self.on_save)
-        self.save_button.grid(row=row, column=0, columnspan=2, padx=10, pady=20)
+        self.save_button.grid(row=1, column=0, padx=10, pady=10)
+
+    def _setup_tab(self, name, field_configs):
+        tab = self.tabview.tab(name)
+        tab.grid_columnconfigure(1, weight=1)
+        
+        for row, (label_text, field_type) in enumerate(field_configs):
+            lbl = ctk.CTkLabel(tab, text=label_text, anchor="w")
+            lbl.grid(row=row, column=0, padx=10, pady=2, sticky="w")
+            
+            if field_type == "text":
+                widget = ctk.CTkTextbox(tab, height=80)
+                widget.grid(row=row, column=1, padx=10, pady=2, sticky="ew")
+            elif field_type == "enum":
+                widget = ctk.CTkOptionMenu(tab, values=["Yes", "No", "Unknown"])
+                widget.grid(row=row, column=1, padx=10, pady=2, sticky="w")
+            else:
+                widget = ctk.CTkEntry(tab)
+                widget.grid(row=row, column=1, padx=10, pady=2, sticky="ew")
+            
+            self.fields[label_text] = widget
 
     def load_comic(self, comic: ComicInfo):
-        self.fields["Series"].delete(0, "end")
-        self.fields["Series"].insert(0, comic.Series)
-        self.fields["Number"].delete(0, "end")
-        self.fields["Number"].insert(0, comic.Number)
-        self.fields["Volume"].delete(0, "end")
-        self.fields["Volume"].insert(0, str(comic.Volume) if comic.Volume != -1 else "")
-        self.fields["Year"].delete(0, "end")
-        self.fields["Year"].insert(0, str(comic.Year) if comic.Year != -1 else "")
-        self.fields["Publisher"].delete(0, "end")
-        self.fields["Publisher"].insert(0, comic.Publisher)
-        self.fields["Genre"].delete(0, "end")
-        self.fields["Genre"].insert(0, comic.Genre)
-        self.summary_text.delete("0.0", "end")
-        self.summary_text.insert("0.0", comic.Summary)
+        for field_name, widget in self.fields.items():
+            val = getattr(comic, field_name)
+            if isinstance(widget, ctk.CTkTextbox):
+                widget.delete("0.0", "end")
+                widget.insert("0.0", str(val) if val is not None else "")
+            elif isinstance(widget, ctk.CTkOptionMenu):
+                widget.set(str(val))
+            elif isinstance(widget, ctk.CTkEntry):
+                widget.delete(0, "end")
+                if val is not None and val != -1:
+                    widget.insert(0, str(val))
 
     def on_save(self):
         if hasattr(self.master.master.master, 'save_current_comic'):
