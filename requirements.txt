@@ -2,3 +2,5 @@ httpx
 python-dotenv
 customtkinter
 Pillow
+fastapi
+uvicorn
