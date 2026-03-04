@@ -6,6 +6,7 @@ from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
 from src.scraper import LocalFilenameScraper, LlmFilenameScraper
+from src.archive import inject_comic_info_xml
 
 app = FastAPI(title="ComicInfoXmlGenerator API")
 
@@ -90,3 +91,22 @@ async def scrape(request: ScrapeRequest):
     scraper.search_batch(comics_to_scrape)
     
     return {"status": "success"}
+
+class InjectRequest(BaseModel):
+    paths: List[str]
+
+@app.post("/api/inject")
+async def inject(request: InjectRequest):
+    results = {}
+    for p in request.paths:
+        if p not in session_cache:
+            results[p] = "error: not in cache"
+            continue
+        
+        try:
+            inject_comic_info_xml(p, session_cache[p])
+            results[p] = "success"
+        except Exception as e:
+            results[p] = f"error: {str(e)}"
+            
+    return {"status": "success", "results": results}
