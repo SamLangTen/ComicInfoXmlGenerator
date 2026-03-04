@@ -1,15 +1,15 @@
 # Implementation Plan: Logging Optimization
 
 ## Phase 1: Protocol and Scraper Refactor
-- [ ] Update `Scraper` protocol in `src/scraper/protocol.py` [ ]
-- [ ] Update `LocalFilenameScraper` signature in `src/scraper/local_scraper.py` [ ]
-- [ ] Implement verbose logging in `LlmFilenameScraper.search_batch` [ ]
+- [x] Update `Scraper` protocol in `src/scraper/protocol.py` [5124810]
+- [x] Update `LocalFilenameScraper` signature in `src/scraper/local_scraper.py` [5124810]
+- [x] Implement verbose logging in `LlmFilenameScraper.search_batch` [5124810]
 
 ## Phase 2: GUI Integration
-- [ ] Create a thread-safe log dispatcher in `gui/app.py` [ ]
-- [ ] Inject log callback into scraper calls [ ]
+- [x] Create a thread-safe log dispatcher in `gui/app.py` [f202e3c]
+- [x] Inject log callback into scraper calls [f202e3c]
 
 ## Phase 3: Verification
-- [ ] Verify logs appear in terminal when running GUI [ ]
-- [ ] Verify logs appear in GUI `log_textbox` when running LLM [ ]
-- [ ] Final verification and checkpoint [ ]
+- [x] Verify logs appear in terminal when running GUI [f202e3c]
+- [x] Verify logs appear in GUI `log_textbox` when running LLM [f202e3c]
+- [x] Final verification and checkpoint [f202e3c]
