@@ -49,7 +49,7 @@ class TestLlmFilenameScraper(unittest.TestCase):
             "choices": [
                 {
                     "message": {
-                        "content": '{"Series": "Spider-Man", "Number": "01", "Volume": 1, "Year": 2024}'
+                        "content": '{"comics": [{"Filename": "Complex Filename [Group] (2024).cbz", "Series": "Spider-Man", "Number": "01", "Volume": 1, "Year": 2024}]}'
                     }
                 }
             ]

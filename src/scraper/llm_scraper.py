@@ -16,11 +16,9 @@ class LlmFilenameScraper:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.system_prompt = (
-            "You are a comic metadata expert. Analyze the given list of filenames and extract as much metadata as possible for each.\n"
-            "Comic filenames often include information in brackets [ ] or parentheses ( ). "
-            "Creator names often appear in these tags (e.g., '[Stan Lee] Spider-Man' or 'Spider-Man (Stan Lee)').\n\n"
-            "Return ONLY a JSON array of objects. Each object should have these keys: "
-            "Series, Number, Volume, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, "
+            "You are a comic metadata expert. Analyze the given list of filenames and extract as much metadata as possible for EACH file.\n"
+            "Return a JSON object with a single key 'comics' containing an array of objects.\n"
+            "Each object MUST have these keys: Filename (exact filename from input), Series, Number, Volume, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, "
             "Publisher, Imprint, Genre, AgeRating, Characters, Teams, Locations, ScanInformation, StoryArc, SeriesGroup, Web, BlackAndWhite, Manga.\n\n"
             "Rules:\n"
             "1. For Year, Month, Day, and Volume, use integers (-1 if unknown).\n"
@@ -29,10 +27,14 @@ class LlmFilenameScraper:
             "4. CRITICAL: If you identify a general author/creator in the filename but their specific role (e.g., Writer, Penciller) is not mentioned, "
             "assign that person to BOTH the 'Writer' and 'Penciller' fields.\n"
             "5. If a specific chapter/issue title is not found, use the combination of 'Series' and 'Volume' (e.g., 'Series Name Vol. 1') as the 'Title'.\n"
-            "6. Look carefully at all text in brackets or parentheses for possible creator names, publishers, or scan groups.\n\n"
-            "Examples:\n"
-            "- Input: ['[Marvel] Spider-Man #01 (1962)']\n"
-            "  Result: [{\"Series\": \"Spider-Man\", \"Number\": \"01\", \"Year\": 1962, \"Publisher\": \"Marvel\" ...}]\n"
+            "6. Look carefully at all text in brackets [ ] or parentheses ( ) for possible creator names, publishers, or scan groups.\n\n"
+            "Example Result:\n"
+            "{\n"
+            "  \"comics\": [\n"
+            "    {\"Filename\": \"file1.cbz\", \"Series\": \"Spider-Man\", \"Number\": \"01\", \"Year\": 1962 ...},\n"
+            "    {\"Filename\": \"file2.cbz\", \"Series\": \"X-Men\", \"Number\": \"05\", \"Year\": 1963 ...}\n"
+            "  ]\n"
+            "}"
         )
 
     def _apply_metadata(self, comic: ComicInfo, metadata: dict):
@@ -80,7 +82,7 @@ class LlmFilenameScraper:
                 print(f"LLM BATCH REQUEST ({len(chunk)} files)")
                 print(f"URL: {self.base_url}/chat/completions")
                 print(f"Model: {self.model}")
-                print(f"Filenames: {filenames}")
+                print(f"User Message: {filenames}")
                 print("="*50 + "\n")
 
                 response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=60.0)
@@ -89,21 +91,47 @@ class LlmFilenameScraper:
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
                 
-                # The LLM might return a root object with an array or just an array
-                metadata_list = json.loads(content)
-                if isinstance(metadata_list, dict):
-                    # Try to find the list inside if it's not a raw list
-                    for key in metadata_list:
-                        if isinstance(metadata_list[key], list):
-                            metadata_list = metadata_list[key]
-                            break
+                # Parse content
+                try:
+                    data_parsed = json.loads(content)
+                except json.JSONDecodeError as je:
+                    print(f"LLM JSON Decode Error: {je}\nContent: {content}")
+                    continue
+
+                metadata_list = []
+                if isinstance(data_parsed, list):
+                    metadata_list = data_parsed
+                elif isinstance(data_parsed, dict):
+                    # Priority 1: Key named 'comics'
+                    if "comics" in data_parsed and isinstance(data_parsed["comics"], list):
+                        metadata_list = data_parsed["comics"]
+                    else:
+                        # Priority 2: Find any list
+                        for key in data_parsed:
+                            if isinstance(data_parsed[key], list):
+                                metadata_list = data_parsed[key]
+                                break
+                        # Priority 3: Single object
+                        if not metadata_list:
+                            metadata_list = [data_parsed]
                 
+                # Mapping logic using Filename if possible
                 if isinstance(metadata_list, list):
-                    for idx, metadata in enumerate(metadata_list):
-                        if idx < len(chunk):
-                            self._apply_metadata(chunk[idx], metadata)
+                    for metadata in metadata_list:
+                        fname = metadata.get("Filename")
+                        # Try to find the matching comic object in the current chunk
+                        match_found = False
+                        if fname:
+                            for c in chunk:
+                                if os.path.basename(c.path) == fname:
+                                    self._apply_metadata(c, metadata)
+                                    match_found = True
+                                    break
+                        
+                        # Fallback: if no Filename key or no match, we can't safely assign in batch 
+                        # unless we trust the order (which we currently don't if some are skipped)
                 else:
-                    print(f"LLM Error: Expected list, got {type(metadata_list)}")
+                    print(f"LLM Error: Failed to extract list. Got {type(data_parsed)}")
 
             except Exception as e:
                 print(f"LLM Batch error: {e}")

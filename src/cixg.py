@@ -18,6 +18,7 @@ def scan_command(args):
     print(f"Found {len(files)} comic(s) in {args.directory}:")
     for f in files:
         print(f"  - {os.path.relpath(f, args.directory)}")
+
 def generate_command(args):
     files = scan_archives(args.directory)
     scraper = get_scraper(args.scraper)
@@ -42,8 +43,6 @@ def generate_command(args):
 
         # Override with CLI flags if provided
         if args.title: comic.Title = args.title
-...
-
         if args.series: comic.Series = args.series
         if args.number: comic.Number = args.number
         if args.volume is not None: comic.Volume = args.volume
@@ -70,7 +69,7 @@ def generate_command(args):
         if args.bw: comic.BlackAndWhite = args.bw
         if args.manga: comic.Manga = args.manga
 
-        rel_path = os.path.relpath(f, args.directory)
+        rel_path = os.path.relpath(comic.path, args.directory)
         print(f"File: {rel_path}")
         print(f"  Series: {comic.Series}")
         print(f"  Number: {comic.Number}")
@@ -81,7 +80,7 @@ def generate_command(args):
             
         if not args.dry_run:
             try:
-                inject_comic_info_xml(f, comic)
+                inject_comic_info_xml(comic.path, comic)
                 print(f"  [SUCCESS] Injected ComicInfo.xml")
             except Exception as e:
                 print(f"  [ERROR] Failed to inject: {e}")

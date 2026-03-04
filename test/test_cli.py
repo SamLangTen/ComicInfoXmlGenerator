@@ -16,10 +16,13 @@ class TestCLI(unittest.TestCase):
 
     def test_scan_command(self):
         # Run: python3 src/cixg.py scan <test_dir>
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "."
         result = subprocess.run(
-            ["venv/bin/python", "src/cixg.py", "scan", self.test_dir],
+            ["venv312/bin/python", "src/cixg.py", "scan", self.test_dir],
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("Found 1 comic(s)", result.stdout)
@@ -27,10 +30,13 @@ class TestCLI(unittest.TestCase):
 
     def test_generate_dry_run(self):
         # Run: python3 src/cixg.py generate <test_dir> --dry-run
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "."
         result = subprocess.run(
-            ["venv/bin/python", "src/cixg.py", "generate", self.test_dir, "--dry-run"],
+            ["venv312/bin/python", "src/cixg.py", "generate", self.test_dir, "--dry-run"],
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("Dry-run", result.stdout)
@@ -44,10 +50,13 @@ class TestCLI(unittest.TestCase):
             zf.writestr("page1.jpg", b"data")
             
         # Run: python3 src/cixg.py generate <test_dir> --scraper regex
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "."
         result = subprocess.run(
-            ["venv/bin/python", "src/cixg.py", "generate", self.test_dir, "--scraper", "regex"],
+            ["venv312/bin/python", "src/cixg.py", "generate", self.test_dir, "--scraper", "regex"],
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         self.assertEqual(result.returncode, 0)
         self.assertIn("[SUCCESS] Injected ComicInfo.xml", result.stdout)
@@ -67,15 +76,18 @@ class TestCLI(unittest.TestCase):
             zf.writestr("p1.jpg", b"data")
             
         # Run: python3 src/cixg.py generate <test_dir> --writer "John Doe" --characters "Hero A, Hero B" --age-rating "Teen"
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "."
         result = subprocess.run(
             [
-                "venv/bin/python", "src/cixg.py", "generate", self.test_dir, 
+                "venv312/bin/python", "src/cixg.py", "generate", self.test_dir, 
                 "--writer", "John Doe", 
                 "--characters", "Hero A, Hero B",
                 "--age-rating", "Teen"
             ],
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         self.assertEqual(result.returncode, 0)
         
