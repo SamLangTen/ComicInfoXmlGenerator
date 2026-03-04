@@ -32,6 +32,34 @@ def generate_command(args):
         comic = ComicInfo(path=f)
         scraper.search(comic)
         
+        # Override with CLI flags if provided
+        if args.title: comic.Title = args.title
+        if args.series: comic.Series = args.series
+        if args.number: comic.Number = args.number
+        if args.volume is not None: comic.Volume = args.volume
+        if args.year is not None: comic.Year = args.year
+        if args.month is not None: comic.Month = args.month
+        if args.day is not None: comic.Day = args.day
+        if args.writer: comic.Writer = args.writer
+        if args.penciller: comic.Penciller = args.penciller
+        if args.inker: comic.Inker = args.inker
+        if args.colorist: comic.Colorist = args.colorist
+        if args.letterer: comic.Letterer = args.letterer
+        if args.cover_artist: comic.CoverArtist = args.cover_artist
+        if args.editor: comic.Editor = args.editor
+        if args.publisher: comic.Publisher = args.publisher
+        if args.imprint: comic.Imprint = args.imprint
+        if args.genre: comic.Genre = args.genre
+        if args.age_rating: comic.AgeRating = args.age_rating
+        if args.characters: comic.Characters = args.characters
+        if args.teams: comic.Teams = args.teams
+        if args.locations: comic.Locations = args.locations
+        if args.story_arc: comic.StoryArc = args.story_arc
+        if args.series_group: comic.SeriesGroup = args.series_group
+        if args.web: comic.Web = args.web
+        if args.bw: comic.BlackAndWhite = args.bw
+        if args.manga: comic.Manga = args.manga
+
         rel_path = os.path.relpath(f, args.directory)
         print(f"File: {rel_path}")
         print(f"  Series: {comic.Series}")
