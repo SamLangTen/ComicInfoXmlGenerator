@@ -2,8 +2,8 @@
 
 ## Phase 1: Backend API Development (FastAPI)
 - [x] Task: Set up FastAPI environment, dependencies (`fastapi`, `uvicorn`), and basic app structure [86f0c0b]
-- [~] Task: Implement Configuration APIs (`GET/POST /api/config`) linked to `ConfigManager`
-- [ ] Task: Implement Scanning API (`POST /api/scan`) to return detected archives
+- [x] Task: Implement Configuration APIs (`GET/POST /api/config`) linked to `ConfigManager` [6e20df5]
+- [~] Task: Implement Scanning API (`POST /api/scan`) to return detected archives
 - [ ] Task: Implement Metadata APIs (`GET/POST /api/metadata`) with in-memory session cache
 - [ ] Task: Implement Scraper API (`POST /api/scrape`) with support for batching
 - [ ] Task: Implement Injection API (`POST /api/inject`) to trigger archive writing
