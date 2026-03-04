@@ -7,12 +7,12 @@
 - [x] Task: Verify unit tests pass (Green phase) [a31d74b]
 - [x] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md) [2d2dc02]
 
-## Phase 2: CLI Expansion
+## Phase 2: CLI Expansion [checkpoint: dec00ce]
 - [x] Task: Write failing integration tests for new CLI flags in `test/test_cli.py` [cf1fc18]
 - [x] Task: Update `src/cixg.py` to include `argparse` flags for all extended fields [aa95ea3]
 - [x] Task: Map CLI flags to the `ComicInfo` data model during processing [4e1d42a]
 - [x] Task: Verify CLI tests pass [4e1d42a]
-- [~] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md) [dec00ce]
 
 ## Phase 3: GUI Tabbed Restructuring
 - [ ] Task: Refactor `gui/app.py` to replace the simple `MetadataForm` with a `ctk.CTkTabview`
