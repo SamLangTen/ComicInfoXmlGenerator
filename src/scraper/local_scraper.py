@@ -1,6 +1,6 @@
 import re
 import os
-from typing import List
+from typing import List, Optional, Callable
 from src.comic_info import ComicInfo
 
 class LocalFilenameScraper:
@@ -13,7 +13,7 @@ class LocalFilenameScraper:
         self.re_number = re.compile(r'#(\d+)|(?<=\s)(\d+)(?=\s|\.|\)|$)|(?<=\D)(\d+)(?=\D|$)') 
         self.re_year = re.compile(r'\((\d{4})\)')
 
-    def search(self, comic: ComicInfo) -> ComicInfo:
+    def search(self, comic: ComicInfo, log_callback: Optional[Callable[[str], None]] = None) -> ComicInfo:
         if not comic.path or not os.path.isfile(comic.path):
             return comic
 

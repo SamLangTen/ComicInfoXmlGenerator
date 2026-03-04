@@ -1,7 +1,7 @@
 import os
 import json
 import httpx
-from typing import List
+from typing import List, Optional, Callable
 from src.comic_info import ComicInfo
 from src.config import LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
 
@@ -48,12 +48,12 @@ class LlmFilenameScraper:
             if field in metadata:
                 setattr(comic, field, metadata[field])
 
-    def search(self, comic: ComicInfo) -> ComicInfo:
+    def search(self, comic: ComicInfo, log_callback: Optional[Callable[[str], None]] = None) -> ComicInfo:
         """Single item search - falls back to search_batch logic."""
-        results = self.search_batch([comic])
+        results = self.search_batch([comic], log_callback=log_callback)
         return results[0]
 
-    def search_batch(self, comics: List[ComicInfo]) -> List[ComicInfo]:
+    def search_batch(self, comics: List[ComicInfo], log_callback: Optional[Callable[[str], None]] = None) -> List[ComicInfo]:
         if not comics or not self.api_key:
             return comics
 
@@ -78,12 +78,16 @@ class LlmFilenameScraper:
                     "response_format": {"type": "json_object"}
                 }
 
-                print("\n" + "="*50)
-                print(f"LLM BATCH REQUEST ({len(chunk)} files)")
-                print(f"URL: {self.base_url}/chat/completions")
-                print(f"Model: {self.model}")
-                print(f"User Message: {filenames}")
-                print("="*50 + "\n")
+                # Prepare detailed logs
+                log_header = f"--- LLM BATCH REQUEST ({len(chunk)} files) ---"
+                payload_str = json.dumps(payload, indent=2, ensure_ascii=False)
+                
+                # Log to terminal
+                print(f"\n{log_header}\n{payload_str}\n")
+                
+                # Log to GUI via callback
+                if log_callback:
+                    log_callback(f"\n[REQUEST]\n{log_header}\n{payload_str}\n")
 
                 response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=60.0)
                 response.raise_for_status()
@@ -91,49 +95,48 @@ class LlmFilenameScraper:
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
                 
+                # Log response
+                print(f"--- LLM RESPONSE ---\n{content}\n")
+                if log_callback:
+                    log_callback(f"\n[RESPONSE]\n{content}\n")
+
                 # Parse content
                 try:
                     data_parsed = json.loads(content)
                 except json.JSONDecodeError as je:
-                    print(f"LLM JSON Decode Error: {je}\nContent: {content}")
+                    error_msg = f"LLM JSON Decode Error: {je}"
+                    print(error_msg)
+                    if log_callback: log_callback(f"\n[ERROR] {error_msg}\n")
                     continue
 
                 metadata_list = []
                 if isinstance(data_parsed, list):
                     metadata_list = data_parsed
                 elif isinstance(data_parsed, dict):
-                    # Priority 1: Key named 'comics'
                     if "comics" in data_parsed and isinstance(data_parsed["comics"], list):
                         metadata_list = data_parsed["comics"]
                     else:
-                        # Priority 2: Find any list
                         for key in data_parsed:
                             if isinstance(data_parsed[key], list):
                                 metadata_list = data_parsed[key]
                                 break
-                        # Priority 3: Single object
                         if not metadata_list:
                             metadata_list = [data_parsed]
                 
-                # Mapping logic using Filename if possible
                 if isinstance(metadata_list, list):
                     for metadata in metadata_list:
                         fname = metadata.get("Filename")
-                        # Try to find the matching comic object in the current chunk
-                        match_found = False
                         if fname:
                             for c in chunk:
                                 if os.path.basename(c.path) == fname:
                                     self._apply_metadata(c, metadata)
-                                    match_found = True
                                     break
-                        
-                        # Fallback: if no Filename key or no match, we can't safely assign in batch 
-                        # unless we trust the order (which we currently don't if some are skipped)
                 else:
                     print(f"LLM Error: Failed to extract list. Got {type(data_parsed)}")
 
             except Exception as e:
-                print(f"LLM Batch error: {e}")
+                error_msg = f"LLM Batch error: {e}"
+                print(error_msg)
+                if log_callback: log_callback(f"\n[ERROR] {error_msg}\n")
 
         return comics
