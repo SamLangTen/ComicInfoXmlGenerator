@@ -59,5 +59,32 @@ class TestCLI(unittest.TestCase):
             self.assertIn("<Series>Real Comic</Series>", xml_content)
             self.assertIn("<Number>001</Number>", xml_content)
 
+    def test_generate_with_extended_flags(self):
+        # Create a real zip file (cbz)
+        import zipfile
+        cbz_path = os.path.join(self.test_dir, "FlagTest.cbz")
+        with zipfile.ZipFile(cbz_path, 'w') as zf:
+            zf.writestr("p1.jpg", b"data")
+            
+        # Run: python3 src/cixg.py generate <test_dir> --writer "John Doe" --characters "Hero A, Hero B" --age-rating "Teen"
+        result = subprocess.run(
+            [
+                "venv/bin/python", "src/cixg.py", "generate", self.test_dir, 
+                "--writer", "John Doe", 
+                "--characters", "Hero A, Hero B",
+                "--age-rating", "Teen"
+            ],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0)
+        
+        # Verify XML content
+        with zipfile.ZipFile(cbz_path, 'r') as zf:
+            xml_content = zf.read("ComicInfo.xml").decode("utf-8")
+            self.assertIn("<Writer>John Doe</Writer>", xml_content)
+            self.assertIn("<Characters>Hero A, Hero B</Characters>", xml_content)
+            self.assertIn("<AgeRating>Teen</AgeRating>", xml_content)
+
 if __name__ == "__main__":
     unittest.main()
