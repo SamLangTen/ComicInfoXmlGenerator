@@ -1,0 +1,9 @@
+{
+  "id": "logging_optimization",
+  "name": "Logging Optimization",
+  "description": "Expose LLM request and response data to both terminal and GUI log window via callbacks.",
+  "status": "in-progress",
+  "owner": "Gemini CLI",
+  "created_at": "2026-03-01T09:00:00Z",
+  "updated_at": "2026-03-01T09:00:00Z"
+}
