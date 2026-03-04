@@ -8,8 +8,8 @@
 - [x] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md) [2d2dc02]
 
 ## Phase 2: CLI Expansion
-- [ ] Task: Write failing integration tests for new CLI flags in `test/test_cli.py`
-- [ ] Task: Update `src/cixg.py` to include `argparse` flags for all extended fields
+- [x] Task: Write failing integration tests for new CLI flags in `test/test_cli.py` [cf1fc18]
+- [~] Task: Update `src/cixg.py` to include `argparse` flags for all extended fields
 - [ ] Task: Map CLI flags to the `ComicInfo` data model during processing
 - [ ] Task: Verify CLI tests pass
 - [ ] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md)
