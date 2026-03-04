@@ -10,8 +10,8 @@
 ## Phase 2: CLI Expansion
 - [x] Task: Write failing integration tests for new CLI flags in `test/test_cli.py` [cf1fc18]
 - [x] Task: Update `src/cixg.py` to include `argparse` flags for all extended fields [aa95ea3]
-- [~] Task: Map CLI flags to the `ComicInfo` data model during processing
-- [ ] Task: Verify CLI tests pass
+- [x] Task: Map CLI flags to the `ComicInfo` data model during processing [4e1d42a]
+- [~] Task: Verify CLI tests pass
 - [ ] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md)
 
 ## Phase 3: GUI Tabbed Restructuring
