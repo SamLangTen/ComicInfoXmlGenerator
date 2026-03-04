@@ -17,8 +17,8 @@
 ## Phase 3: GUI Tabbed Restructuring
 - [x] Task: Refactor `gui/app.py` to replace the simple `MetadataForm` with a `ctk.CTkTabview` [6618153]
 - [x] Task: Implement 'General', 'Credits', 'Tags & Details', and 'Publishing' tabs [6618153]
-- [~] Task: Wire tab inputs to the `selected_comic` object and session cache
-- [ ] Task: Implement basic validation visual cues (e.g., red border for invalid types)
+- [x] Task: Wire tab inputs to the `selected_comic` object and session cache [464a3b4]
+- [~] Task: Implement basic validation visual cues (e.g., red border for invalid types)
 - [ ] Task: Conductor - User Manual Verification 'GUI Tabbed Restructuring' (Protocol in workflow.md)
 
 ## Phase 4: Validation & Final Integration
