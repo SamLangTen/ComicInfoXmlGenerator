@@ -1,4 +1,5 @@
 from typing import Protocol, Optional, List, Callable
+from src.comic_info import ComicInfo
 
 
 class Scraper(Protocol):

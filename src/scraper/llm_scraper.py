@@ -24,9 +24,11 @@ class LlmFilenameScraper:
             "1. For Year, Month, Day, and Volume, use integers (-1 if unknown).\n"
             "2. For others, use strings (empty string if unknown).\n"
             "3. For BlackAndWhite and Manga, use 'Yes', 'No', or 'Unknown'.\n"
-            "4. CRITICAL: If you identify a general author/creator in the filename but their specific role (e.g., Writer, Penciller) is not mentioned, "
+            "4. STRICT ADHERENCE: All extracted text values (Series, Writer, Characters, etc.) MUST be present in the original filename. "
+            "Do NOT translate, summarize, or creatively modify names. Use the EXACT spelling and casing as it appears in the filename.\n"
+            "5. CRITICAL: If you identify a general author/creator in the filename but their specific role (e.g., Writer, Penciller) is not mentioned, "
             "assign that person to BOTH the 'Writer' and 'Penciller' fields.\n"
-            "5. If a specific chapter/issue title is not found, use the combination of 'Series' and 'Volume' (e.g., 'Series Name Vol. 1') as the 'Title'.\n"
+            "6. If a specific chapter/issue title is not found, use the combination of 'Series' and 'Volume' (e.g., 'Series Name Vol. 1') as the 'Title'.\n"
             "6. Look carefully at all text in brackets [ ] or parentheses ( ) for possible creator names, publishers, or scan groups.\n\n"
             "Example Result:\n"
             "{\n"
@@ -38,15 +40,28 @@ class LlmFilenameScraper:
         )
 
     def _apply_metadata(self, comic: ComicInfo, metadata: dict):
+        """Apply metadata to ComicInfo with case-insensitive key support."""
         fields = [
             "Title", "Series", "Number", "Volume", "Year", "Month", "Day", 
             "Writer", "Penciller", "Inker", "Colorist", "Letterer", "CoverArtist", "Editor",
             "Publisher", "Imprint", "Genre", "AgeRating", "Characters", "Teams", "Locations",
             "ScanInformation", "StoryArc", "SeriesGroup", "Web", "BlackAndWhite", "Manga"
         ]
+        
+        # Create a lowercase map of metadata for easy lookup
+        meta_low = {k.lower(): v for k, v in metadata.items()}
+        
         for field in fields:
-            if field in metadata:
-                setattr(comic, field, metadata[field])
+            f_low = field.lower()
+            if f_low in meta_low:
+                val = meta_low[f_low]
+                # Ensure correct types for specific fields
+                if field in ["Volume", "Year", "Month", "Day"]:
+                    try:
+                        val = int(val)
+                    except (ValueError, TypeError):
+                        val = -1
+                setattr(comic, field, val)
 
     def search(self, comic: ComicInfo, log_callback: Optional[Callable[[str], None]] = None) -> ComicInfo:
         """Single item search - falls back to search_batch logic."""
@@ -82,12 +97,8 @@ class LlmFilenameScraper:
                 log_header = f"--- LLM BATCH REQUEST ({len(chunk)} files) ---"
                 payload_str = json.dumps(payload, indent=2, ensure_ascii=False)
                 
-                # Log to terminal
+                if log_callback: log_callback(f"\n[REQUEST]\n{log_header}\n{payload_str}\n")
                 print(f"\n{log_header}\n{payload_str}\n")
-                
-                # Log to GUI via callback
-                if log_callback:
-                    log_callback(f"\n[REQUEST]\n{log_header}\n{payload_str}\n")
 
                 response = httpx.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=60.0)
                 response.raise_for_status()
@@ -95,18 +106,15 @@ class LlmFilenameScraper:
                 data = response.json()
                 content = data["choices"][0]["message"]["content"]
                 
-                # Log response
+                if log_callback: log_callback(f"\n[RESPONSE]\n{content}\n")
                 print(f"--- LLM RESPONSE ---\n{content}\n")
-                if log_callback:
-                    log_callback(f"\n[RESPONSE]\n{content}\n")
 
                 # Parse content
                 try:
                     data_parsed = json.loads(content)
                 except json.JSONDecodeError as je:
-                    error_msg = f"LLM JSON Decode Error: {je}"
-                    print(error_msg)
-                    if log_callback: log_callback(f"\n[ERROR] {error_msg}\n")
+                    msg = f"LLM JSON Decode Error: {je}"
+                    if log_callback: log_callback(f"[ERROR] {msg}")
                     continue
 
                 metadata_list = []
@@ -123,20 +131,38 @@ class LlmFilenameScraper:
                         if not metadata_list:
                             metadata_list = [data_parsed]
                 
+                # Mapping logic
                 if isinstance(metadata_list, list):
-                    for metadata in metadata_list:
-                        fname = metadata.get("Filename")
+                    for idx, metadata in enumerate(metadata_list):
+                        # Try mapping by filename first
+                        fname = metadata.get("Filename") or metadata.get("filename")
+                        match_found = False
                         if fname:
                             for c in chunk:
                                 if os.path.basename(c.path) == fname:
                                     self._apply_metadata(c, metadata)
+                                    match_found = True
                                     break
+                        
+                        # Fallback: Positional mapping if only 1 file or if no Filename key
+                        if not match_found and len(chunk) == 1:
+                            self._apply_metadata(chunk[0], metadata)
+                            match_found = True
+                        elif not match_found and len(metadata_list) == len(chunk):
+                            # Riskier but logical fallback: same count, assume order
+                            self._apply_metadata(chunk[idx], metadata)
+                            match_found = True
+                            
+                        if not match_found:
+                            msg = f"Skipping metadata for {fname or 'Unknown'} - no matching file found in chunk."
+                            if log_callback: log_callback(f"[WARN] {msg}")
                 else:
-                    print(f"LLM Error: Failed to extract list. Got {type(data_parsed)}")
+                    msg = f"Failed to extract list from LLM response. Got {type(data_parsed)}"
+                    if log_callback: log_callback(f"[ERROR] {msg}")
 
             except Exception as e:
-                error_msg = f"LLM Batch error: {e}"
-                print(error_msg)
-                if log_callback: log_callback(f"\n[ERROR] {error_msg}\n")
+                msg = f"LLM Batch error: {e}"
+                if log_callback: log_callback(f"[ERROR] {msg}")
+                print(msg)
 
         return comics
