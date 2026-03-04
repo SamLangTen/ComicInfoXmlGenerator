@@ -15,7 +15,7 @@ ComicInfoXmlGenerator is a tool designed to enhance comic archives (CBZ, CBR, CB
 - **Advanced Filenames & Metadata Scraping**: Extract series, volume, issue, and year information from archive filenames using sophisticated regex patterns, directory context analysis (OldSchool), and LLM-powered parsing for complex naming schemes.
 - **Online Data Enrichment**: Connect to online comic databases to supplement local information with official metadata.
 - **Powerful CLI for Automation**: Robust command-line interface with `scan` and `generate` commands for efficient directory processing, dry-run previews, and automated metadata injection.
-- **Professional Desktop Metadata Editor**: A modern GUI with standard OS selection logic (Cmd/Ctrl+Click) for batch processing. Features an in-memory session cache to preview and fine-tune scraper results across multiple files before final injection.
+- **Professional Desktop Metadata Editor**: A modern, tabbed GUI with standard OS selection logic (Cmd/Ctrl+Click) for batch processing. Supports comprehensive metadata fields (Credits, Characters, Story Arcs, etc.) with real-time validation and an in-memory session cache.
 - **Multi-format Support**: Native handling of CBZ (ZIP) archives for metadata injection, with planned support for CBR (RAR) and CB7 (7z).
 
 ## Design Goals
