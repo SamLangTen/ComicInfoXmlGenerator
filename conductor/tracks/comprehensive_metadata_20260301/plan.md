@@ -1,4 +1,4 @@
-# Implementation Plan: Comprehensive Metadata Support
+# Implementation Plan: Comprehensive Metadata Support [checkpoint: f8df609]
 
 ## Phase 1: Metadata Core Expansion [checkpoint: 2d2dc02]
 - [x] Task: Write failing unit tests for extended `ComicInfo` fields in `test/test_comic_info_xml.py` [998d22e]
@@ -14,15 +14,17 @@
 - [x] Task: Verify CLI tests pass [4e1d42a]
 - [x] Task: Conductor - User Manual Verification 'CLI Expansion' (Protocol in workflow.md) [dec00ce]
 
-## Phase 3: GUI Tabbed Restructuring
+## Phase 3: GUI Tabbed Restructuring [checkpoint: fa19291]
 - [x] Task: Refactor `gui/app.py` to replace the simple `MetadataForm` with a `ctk.CTkTabview` [6618153]
 - [x] Task: Implement 'General', 'Credits', 'Tags & Details', and 'Publishing' tabs [6618153]
 - [x] Task: Wire tab inputs to the `selected_comic` object and session cache [464a3b4]
 - [x] Task: Implement basic validation visual cues (e.g., red border for invalid types) [e96189b]
-- [~] Task: Conductor - User Manual Verification 'GUI Tabbed Restructuring' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'GUI Tabbed Restructuring' (Protocol in workflow.md) [fe66f60]
 
-## Phase 4: Validation & Final Integration
-- [ ] Task: Implement specific validation logic for Age Rating and Credit string formats
-- [ ] Task: Perform full end-to-end testing (Scan -> Batch Scrape -> Manual Edit -> Inject)
-- [ ] Task: Final code cleanup and documentation update
-- [ ] Task: Conductor - User Manual Verification 'Validation & Final Integration' (Protocol in workflow.md)
+## Phase 4: Validation & Final Integration [checkpoint: f8df609]
+- [x] Task: Implement specific validation logic for Age Rating and Credit string formats [e96189b]
+- [x] Task: Update LLM Scraper prompts and mapping for extended fields [fe66f60]
+- [x] Task: Implement batch processing for LlmFilenameScraper [fe66f60]
+- [x] Task: Perform full end-to-end testing (Scan -> Batch Scrape -> Manual Edit -> Inject) [f8df609]
+- [x] Task: Final code cleanup and documentation update [f8df609]
+- [x] Task: Conductor - User Manual Verification 'Validation & Final Integration' (Protocol in workflow.md) [f8df609]
