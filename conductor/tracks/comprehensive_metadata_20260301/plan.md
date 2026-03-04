@@ -1,11 +1,11 @@
 # Implementation Plan: Comprehensive Metadata Support
 
-## Phase 1: Metadata Core Expansion
+## Phase 1: Metadata Core Expansion [checkpoint: 2d2dc02]
 - [x] Task: Write failing unit tests for extended `ComicInfo` fields in `test/test_comic_info_xml.py` [998d22e]
 - [x] Task: Update `ComicInfo` dataclass in `src/comic_info.py` with 20+ new fields [a08b6f7]
 - [x] Task: Update `to_xml` and `from_xml` logic to handle serialization [a31d74b]
 - [x] Task: Verify unit tests pass (Green phase) [a31d74b]
-- [~] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Metadata Core Expansion' (Protocol in workflow.md) [2d2dc02]
 
 ## Phase 2: CLI Expansion
 - [ ] Task: Write failing integration tests for new CLI flags in `test/test_cli.py`
