@@ -372,6 +372,10 @@ class App(ctk.CTk):
         thread.start()
 
     def _async_apply_scraper(self, strategy: str, mode: str, targets: list):
+        # Dispatch logs from background thread safely
+        def gui_log_callback(msg: str):
+            self.after(0, lambda: self.log(msg))
+
         try:
             if strategy == "llm":
                 api_key = config_manager.get("llm_api_key")
@@ -388,12 +392,9 @@ class App(ctk.CTk):
                         self.comic_cache[path] = ComicInfo(path=path)
                     comics_to_process.append(self.comic_cache[path])
                 
-                # Perform batch search
+                # Perform batch search with logging
                 self.after(0, lambda: self.log(f"Sending batch request for {len(targets)} files..."))
-                
-                # We need a way to track internal progress if LlmScraper doesn't call our log
-                # For now, we'll just run the batch.
-                scraper.search_batch(comics_to_process)
+                scraper.search_batch(comics_to_process, log_callback=gui_log_callback)
                 
                 # Refresh UI if currently viewing one of these
                 if self.selected_comic and self.selected_comic.path in targets:
@@ -403,7 +404,7 @@ class App(ctk.CTk):
                 for i, path in enumerate(targets):
                     self.after(0, lambda p=path, idx=i+1: self.log(f"[{idx}/{len(targets)}] Scraping {os.path.basename(p)}..."))
                     scraped_data = ComicInfo(path=path)
-                    scraper.search(scraped_data)
+                    scraper.search(scraped_data, log_callback=gui_log_callback)
                     if path not in self.comic_cache:
                         self.comic_cache[path] = ComicInfo(path=path)
                     self._merge_metadata(self.comic_cache[path], scraped_data, mode)
