@@ -1,9 +1,12 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from dataclasses import asdict
 import json
 import asyncio
+import os
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
@@ -11,6 +14,11 @@ from src.scraper import LocalFilenameScraper, LlmFilenameScraper
 from src.archive import inject_comic_info_xml
 
 app = FastAPI(title="ComicInfoXmlGenerator API")
+
+# Serve Frontend Static Assets
+web_dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "web/dist")
+
+# ... existing cache and manager ...
 
 # In-memory session cache: path -> ComicInfo
 session_cache: Dict[str, ComicInfo] = {}
@@ -145,3 +153,16 @@ async def inject(request: InjectRequest):
             results[p] = f"error: {str(e)}"
             
     return {"status": "success", "results": results}
+
+# Serve static files and index.html for unknown routes
+if os.path.exists(web_dist_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(web_dist_path, "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # If the path starts with api, it should have been caught by the other routes
+        if full_path.startswith("api"):
+            return {"error": "Not Found"}
+        return FileResponse(os.path.join(web_dist_path, "index.html"))
+else:
+    print(f"Warning: web/dist not found at {web_dist_path}. UI will not be served.")

@@ -34,7 +34,7 @@ const handleScan = async () => {
 
 const handleSelectionChanged = async (paths: string[]) => {
   selectedPaths.value = paths
-  if (paths.length === 1) {
+  if (paths.length === 1 && paths[0]) {
     addLog(`Loading metadata: ${paths[0].split(/[\\/]/).pop()}`)
     try {
       currentComic.value = await apiService.getMetadata(paths[0])
@@ -63,11 +63,11 @@ const handleScrape = async () => {
   isProcessing.value = true
   addLog(`Running ${scraperStrategy.value} scraper on ${selectedPaths.value.length} files...`)
   try {
-    const response = await apiService.triggerScrape(selectedPaths.value, scraperStrategy.value)
+    await apiService.triggerScrape(selectedPaths.value, scraperStrategy.value)
     addLog(`Scraping triggered successfully.`, 'info')
     
     // If we are looking at one of the scraped files, reload it
-    if (selectedPaths.value.length === 1) {
+    if (selectedPaths.value.length === 1 && selectedPaths.value[0]) {
        currentComic.value = await apiService.getMetadata(selectedPaths.value[0])
     }
   } catch (err: any) {
