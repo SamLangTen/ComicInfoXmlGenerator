@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from dataclasses import asdict
+import json
+import asyncio
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
@@ -12,6 +14,35 @@ app = FastAPI(title="ComicInfoXmlGenerator API")
 
 # In-memory session cache: path -> ComicInfo
 session_cache: Dict[str, ComicInfo] = {}
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
+@app.websocket("/api/logs")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 class ConfigUpdate(BaseModel):
     llm_base_url: str = None
@@ -71,6 +102,10 @@ class ScrapeRequest(BaseModel):
 
 @app.post("/api/scrape")
 async def scrape(request: ScrapeRequest):
+    # Log callback for the scraper
+    def api_log_callback(msg: str):
+        asyncio.create_task(manager.broadcast(msg))
+
     if request.strategy.lower() == "llm":
         scraper = LlmFilenameScraper(
             api_key=config_manager.get("llm_api_key"),
@@ -88,7 +123,7 @@ async def scrape(request: ScrapeRequest):
         comics_to_scrape.append(session_cache[p])
     
     # Perform batch search
-    scraper.search_batch(comics_to_scrape)
+    scraper.search_batch(comics_to_scrape, log_callback=api_log_callback)
     
     return {"status": "success"}
 
