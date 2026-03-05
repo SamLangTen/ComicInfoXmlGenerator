@@ -16,12 +16,12 @@
 - [x] Task: Implement API client services (using `axios` or `fetch`) [7d73f20]
 - [x] Task: Conductor - User Manual Verification 'Frontend Setup & Layout' (Protocol in workflow.md) [21d0892]
 
-## Phase 3: Web-based Metadata Editor
+## Phase 3: Web-based Metadata Editor [checkpoint: dd3f55b]
 - [x] Task: Implement the file browser/list in the sidebar with multi-selection support [16c3e3d]
 - [x] Task: Build the Tabbed Metadata Editor (General, Credits, Tags, Publishing) [a97453a]
 - [x] Task: Connect form fields to the Metadata APIs with auto-save to session cache [a97453a]
 - [x] Task: Implement real-time validation visual cues in the web form [49a9d6e]
-- [~] Task: Conductor - User Manual Verification 'Web-based Metadata Editor' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Web-based Metadata Editor' (Protocol in workflow.md) [dd3f55b]
 
 ## Phase 4: Batch Processing & Live Logs
 - [ ] Task: Implement the batch scraper trigger and global progress bar
