@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { apiService } from './services/api'
 import ArchiveList from './components/ArchiveList.vue'
 import MetadataEditor from './components/MetadataEditor.vue'
@@ -8,10 +8,16 @@ const directory = ref('')
 const archives = ref<string[]>([])
 const selectedPaths = ref<string[]>([])
 const currentComic = ref<any>(null)
-const logs = ref<string[]>([])
+const logs = ref<{time: string, type: 'info' | 'error' | 'warn' | 'tech', msg: string}[]>([])
+const isProcessing = ref(false)
+const scraperStrategy = ref('local')
 
-const addLog = (msg: string) => {
-  logs.value.push(`> ${msg}`)
+const addLog = (msg: string, type: 'info' | 'error' | 'warn' | 'tech' = 'info') => {
+  logs.value.push({
+    time: new Date().toLocaleTimeString(),
+    type,
+    msg
+  })
 }
 
 const handleScan = async () => {
@@ -22,7 +28,7 @@ const handleScan = async () => {
     archives.value = response.files
     addLog(`Found ${archives.value.length} archives.`)
   } catch (err: any) {
-    addLog(`Error scanning directory: ${err.message}`)
+    addLog(`Error scanning directory: ${err.message}`, 'error')
   }
 }
 
@@ -33,7 +39,7 @@ const handleSelectionChanged = async (paths: string[]) => {
     try {
       currentComic.value = await apiService.getMetadata(paths[0])
     } catch (err: any) {
-      addLog(`Error loading metadata: ${err.message}`)
+      addLog(`Error loading metadata: ${err.message}`, 'error')
     }
   } else {
     currentComic.value = null
@@ -52,21 +58,74 @@ watch(currentComic, async (newVal) => {
   }
 }, { deep: true })
 
+const handleScrape = async () => {
+  if (selectedPaths.value.length === 0) return
+  isProcessing.value = true
+  addLog(`Running ${scraperStrategy.value} scraper on ${selectedPaths.value.length} files...`)
+  try {
+    const response = await apiService.triggerScrape(selectedPaths.value, scraperStrategy.value)
+    addLog(`Scraping triggered successfully.`, 'info')
+    
+    // If we are looking at one of the scraped files, reload it
+    if (selectedPaths.value.length === 1) {
+       currentComic.value = await apiService.getMetadata(selectedPaths.value[0])
+    }
+  } catch (err: any) {
+    addLog(`Error during scraping: ${err.message}`, 'error')
+  } finally {
+    isProcessing.value = false
+  }
+}
+
 const handleInject = async () => {
   if (selectedPaths.value.length === 0) return
+  isProcessing.value = true
   try {
     addLog(`Injecting metadata into ${selectedPaths.value.length} file(s)...`)
     const response = await apiService.triggerInject(selectedPaths.value)
-    addLog(`Injection complete. Status: ${response.status}`)
+    addLog(`Injection process finished.`, 'info')
     // Show individual results
     Object.entries(response.results).forEach(([path, status]) => {
       const name = path.split(/[\\/]/).pop()
-      addLog(`- ${name}: ${status}`)
+      const type = String(status).includes('error') ? 'error' : 'info'
+      addLog(`${name}: ${status}`, type)
     })
   } catch (err: any) {
-    addLog(`Error injecting metadata: ${err.message}`)
+    addLog(`Error injecting metadata: ${err.message}`, 'error')
+  } finally {
+    isProcessing.value = false
   }
 }
+
+// WebSocket for live logs
+let socket: WebSocket | null = null
+
+const connectWebSocket = () => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  // In dev mode, host is 5173, but we want 8000
+  // For simplicity, hardcode for now or use relative if proxy works for WS
+  const wsUrl = `${protocol}//${host}/api/logs`
+  
+  socket = new WebSocket(wsUrl)
+  
+  socket.onmessage = (event) => {
+    addLog(event.data, 'tech')
+  }
+  
+  socket.onclose = () => {
+    console.log('WS disconnected, retrying in 5s...')
+    setTimeout(connectWebSocket, 5000)
+  }
+}
+
+onMounted(() => {
+  connectWebSocket()
+})
+
+onUnmounted(() => {
+  if (socket) socket.close()
+})
 </script>
 
 <template>
@@ -94,6 +153,11 @@ const handleInject = async () => {
         </button>
       </div>
     </header>
+
+    <!-- Global Progress Bar -->
+    <div v-if="isProcessing" class="h-1 bg-blue-100 dark:bg-blue-900 overflow-hidden">
+      <div class="h-full bg-blue-600 animate-progress origin-left"></div>
+    </div>
 
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
@@ -146,13 +210,24 @@ const handleInject = async () => {
                    <h2 class="text-2xl font-bold mb-2">Batch Processing</h2>
                    <p class="text-gray-500">You have selected <span class="font-bold text-blue-600 dark:text-blue-400">{{ selectedPaths.length }}</span> comic archives.</p>
                  </div>
-                 <div class="flex justify-center space-x-4">
-                   <button class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/20 transition-all">
-                     Apply Scraper to All
-                   </button>
+                 <div class="flex flex-col items-center space-y-4">
+                   <div class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                     <select v-model="scraperStrategy" class="bg-transparent text-sm font-bold px-3 py-1 outline-none">
+                       <option value="local">Local Scraper</option>
+                       <option value="llm">LLM Scraper</option>
+                     </select>
+                     <button 
+                      @click="handleScrape"
+                      :disabled="isProcessing"
+                      class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-1.5 rounded-md font-bold transition-all"
+                     >
+                       Run Scraper
+                     </button>
+                   </div>
                    <button 
                     @click="handleInject"
-                    class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-green-500/20 transition-all"
+                    :disabled="isProcessing"
+                    class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-12 py-2.5 rounded-lg font-bold shadow-lg shadow-green-500/20 transition-all"
                    >
                      Inject All ({{ selectedPaths.length }})
                    </button>
@@ -166,13 +241,24 @@ const handleInject = async () => {
                      <h2 class="text-xl font-extrabold truncate max-w-md">{{ currentComic.Title || 'Untitled' }}</h2>
                      <p class="text-xs text-gray-400 font-mono mt-1 truncate max-w-md">{{ selectedPaths[0] }}</p>
                    </div>
-                   <div class="flex items-center space-x-2">
-                     <button class="text-xs bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 px-3 py-1.5 rounded-md font-bold transition-all">
-                       Scrape
-                     </button>
+                   <div class="flex items-center space-x-3">
+                     <div class="flex items-center border dark:border-gray-700 rounded-md overflow-hidden bg-white dark:bg-gray-800">
+                        <select v-model="scraperStrategy" class="bg-transparent text-[10px] font-bold px-2 py-1 outline-none border-r dark:border-gray-700">
+                          <option value="local">Local</option>
+                          <option value="llm">LLM</option>
+                        </select>
+                        <button 
+                          @click="handleScrape"
+                          :disabled="isProcessing"
+                          class="text-[10px] bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-3 py-1.5 font-black uppercase tracking-tighter transition-all"
+                        >
+                          Scrape
+                        </button>
+                     </div>
                      <button 
                       @click="handleInject"
-                      class="text-xs bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md font-bold shadow-md shadow-green-500/20 transition-all"
+                      :disabled="isProcessing"
+                      class="text-[10px] bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md font-black uppercase tracking-tighter shadow-md shadow-green-500/20 transition-all"
                      >
                        Inject
                      </button>
@@ -194,8 +280,10 @@ const handleInject = async () => {
           </div>
           <div class="flex-1 overflow-y-auto p-6 font-mono text-[11px] leading-relaxed bg-black text-gray-300 custom-scrollbar">
             <div v-for="(log, i) in logs" :key="i" class="mb-1">
-              <span class="text-blue-500/50 mr-2">{{ new Date().toLocaleTimeString() }}</span>
-              <span :class="{ 'text-green-400': log.includes('Success'), 'text-red-400': log.includes('Error'), 'text-yellow-400': log.includes('Warning') }">{{ log }}</span>
+              <span class="text-blue-500/50 mr-2">{{ log.time }}</span>
+              <span :class="{ 'text-green-400': log.type === 'info' && log.msg.includes('Success'), 'text-red-400': log.type === 'error', 'text-yellow-400': log.type === 'warn', 'text-blue-400': log.type === 'tech' }">
+                {{ log.msg }}
+              </span>
             </div>
             <div v-if="logs.length === 0" class="text-gray-700 italic flex items-center h-full justify-center">Console ready for operations...</div>
           </div>
@@ -206,6 +294,16 @@ const handleInject = async () => {
 </template>
 
 <style>
+@keyframes progress {
+  0% { transform: translateX(-100%) scaleX(0.2); }
+  50% { transform: translateX(0) scaleX(0.5); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}
+.animate-progress {
+  animation: progress 2s infinite linear;
+  width: 100%;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
