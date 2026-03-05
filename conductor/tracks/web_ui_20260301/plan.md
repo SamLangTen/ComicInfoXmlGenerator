@@ -11,8 +11,8 @@
 - [x] Task: Conductor - User Manual Verification 'Backend API Development' (Protocol in workflow.md) [a03aa7a]
 
 ## Phase 2: Frontend Setup & Layout (Vue 3 + TS)
-- [ ] Task: Scaffold Vue 3 project with Vite, TypeScript, and Tailwind CSS
-- [ ] Task: Define the core layout (Responsive Sidebar, Main Content Area, Log Console)
+- [x] Task: Scaffold Vue 3 project with Vite, TypeScript, and Tailwind CSS [870a13d]
+- [~] Task: Define the core layout (Responsive Sidebar, Main Content Area, Log Console)
 - [ ] Task: Implement API client services (using `axios` or `fetch`)
 - [ ] Task: Conductor - User Manual Verification 'Frontend Setup & Layout' (Protocol in workflow.md)
 
