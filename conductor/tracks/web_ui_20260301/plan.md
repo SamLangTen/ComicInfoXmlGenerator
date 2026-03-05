@@ -30,7 +30,7 @@
 - [x] Task: Conductor - User Manual Verification 'Batch Processing & Live Logs' (Protocol in workflow.md) [258926a]
 
 ## Phase 5: Deployment & Integration
-- [ ] Task: Refactor FastAPI to serve the compiled Vue static assets
-- [ ] Task: Add a new command to `src/cixg.py` to launch the web server (e.g., `python src/cixg.py serve`)
+- [x] Task: Refactor FastAPI to serve the compiled Vue static assets [b6c0fe8]
+- [~] Task: Add a new command to `src/cixg.py` to launch the web server (e.g., `python src/cixg.py serve`)
 - [ ] Task: Final visual polish and responsive testing (Tablet/Mobile)
 - [ ] Task: Conductor - User Manual Verification 'Deployment & Integration' (Protocol in workflow.md)
