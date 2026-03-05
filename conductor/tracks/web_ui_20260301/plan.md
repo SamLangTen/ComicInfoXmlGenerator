@@ -7,8 +7,8 @@
 - [x] Task: Implement Metadata APIs (`GET/POST /api/metadata`) with in-memory session cache [0bb2f76]
 - [x] Task: Implement Scraper API (`POST /api/scrape`) with support for batching [72bfb4b]
 - [x] Task: Implement Injection API (`POST /api/inject`) to trigger archive writing [a8598b6]
-- [~] Task: Add WebSocket/SSE support for real-time scraper logs and progress
-- [ ] Task: Conductor - User Manual Verification 'Backend API Development' (Protocol in workflow.md)
+- [x] Task: Add WebSocket/SSE support for real-time scraper logs and progress [d087851]
+- [~] Task: Conductor - User Manual Verification 'Backend API Development' (Protocol in workflow.md)
 
 ## Phase 2: Frontend Setup & Layout (Vue 3 + TS)
 - [ ] Task: Scaffold Vue 3 project with Vite, TypeScript, and Tailwind CSS
