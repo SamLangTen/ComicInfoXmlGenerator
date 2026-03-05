@@ -13,8 +13,8 @@
 ## Phase 2: Frontend Setup & Layout (Vue 3 + TS)
 - [x] Task: Scaffold Vue 3 project with Vite, TypeScript, and Tailwind CSS [870a13d]
 - [x] Task: Define the core layout (Responsive Sidebar, Main Content Area, Log Console) [d64a231]
-- [~] Task: Implement API client services (using `axios` or `fetch`)
-- [ ] Task: Conductor - User Manual Verification 'Frontend Setup & Layout' (Protocol in workflow.md)
+- [x] Task: Implement API client services (using `axios` or `fetch`) [7d73f20]
+- [~] Task: Conductor - User Manual Verification 'Frontend Setup & Layout' (Protocol in workflow.md)
 
 ## Phase 3: Web-based Metadata Editor
 - [ ] Task: Implement the file browser/list in the sidebar with multi-selection support
