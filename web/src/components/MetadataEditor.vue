@@ -21,6 +21,14 @@ const updateField = (field: string, value: any) => {
   emit('update:modelValue', { ...localComic.value })
 }
 
+const isInvalidNumber = (key: string) => {
+  const val = localComic.value[key]
+  if (val === undefined || val === null || val === '') return false
+  if (val === -1) return false
+  const strVal = String(val)
+  return !/^-?\d+$/.test(strVal)
+}
+
 const tabs = ['General', 'Credits', 'Tags', 'Publishing']
 
 const fieldGroups = {
@@ -82,11 +90,11 @@ const fieldGroups = {
     </div>
 
     <!-- Tab Content -->
-    <div class="flex-1 overflow-y-auto pr-2">
+    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
       <div v-if="activeTab === 'General' || activeTab === 'Credits' || activeTab === 'Tags' || activeTab === 'Publishing'">
         <div class="grid grid-cols-1 gap-y-4">
           <div v-for="field in (fieldGroups as any)[activeTab]" :key="field.key" class="flex flex-col space-y-1">
-            <label :for="field.key" class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <label :for="field.key" class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">
               {{ field.label }}
             </label>
             
@@ -95,7 +103,7 @@ const fieldGroups = {
               :id="field.key"
               :name="field.key"
               rows="4"
-              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               :value="localComic[field.key]"
               @input="updateField(field.key, ($event.target as HTMLTextAreaElement).value)"
             ></textarea>
@@ -104,7 +112,7 @@ const fieldGroups = {
               v-else-if="field.type === 'enum'"
               :id="field.key"
               :name="field.key"
-              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               :value="localComic[field.key]"
               @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
             >
@@ -117,10 +125,11 @@ const fieldGroups = {
               v-else
               :id="field.key"
               :name="field.key"
-              :type="field.type"
-              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :type="field.type === 'number' ? 'text' : field.type"
+              class="block w-full px-3 py-2 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              :class="{ 'border-red-500 ring-1 ring-red-500': field.type === 'number' && isInvalidNumber(field.key) }"
               :value="localComic[field.key] === -1 ? '' : localComic[field.key]"
-              @input="updateField(field.key, field.type === 'number' ? parseInt(($event.target as HTMLInputElement).value) || -1 : ($event.target as HTMLInputElement).value)"
+              @input="updateField(field.key, field.type === 'number' ? ($event.target as HTMLInputElement).value : ($event.target as HTMLInputElement).value)"
             />
           </div>
         </div>

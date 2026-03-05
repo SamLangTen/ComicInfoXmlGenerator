@@ -23,4 +23,20 @@ describe('MetadataEditor', () => {
     expect(seriesInput.exists()).toBe(true)
     expect((seriesInput.element as HTMLInputElement).value).toBe('Spider-Man')
   })
+
+  it('shows visual validation cues for invalid numbers', async () => {
+    const comic = { Volume: 1 }
+    const wrapper = mount(MetadataEditor, {
+      props: { modelValue: comic }
+    })
+    const volumeInput = wrapper.find('input[name="Volume"]')
+    
+    // Set an invalid numeric value
+    await volumeInput.setValue('abc')
+    expect(volumeInput.classes()).toContain('border-red-500')
+    
+    // Set a valid value
+    await volumeInput.setValue('5')
+    expect(volumeInput.classes()).not.toContain('border-red-500')
+  })
 })
