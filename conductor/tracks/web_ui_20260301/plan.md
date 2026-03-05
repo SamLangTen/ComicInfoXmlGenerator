@@ -18,9 +18,9 @@
 
 ## Phase 3: Web-based Metadata Editor
 - [x] Task: Implement the file browser/list in the sidebar with multi-selection support [16c3e3d]
-- [~] Task: Build the Tabbed Metadata Editor (General, Credits, Tags, Publishing)
-- [ ] Task: Connect form fields to the Metadata APIs with auto-save to session cache
-- [ ] Task: Implement real-time validation visual cues in the web form
+- [x] Task: Build the Tabbed Metadata Editor (General, Credits, Tags, Publishing) [a97453a]
+- [x] Task: Connect form fields to the Metadata APIs with auto-save to session cache [a97453a]
+- [~] Task: Implement real-time validation visual cues in the web form
 - [ ] Task: Conductor - User Manual Verification 'Web-based Metadata Editor' (Protocol in workflow.md)
 
 ## Phase 4: Batch Processing & Live Logs
