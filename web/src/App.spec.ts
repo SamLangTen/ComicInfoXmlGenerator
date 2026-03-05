@@ -12,6 +12,7 @@ describe('App', () => {
     const wrapper = mount(App)
     expect(wrapper.find('aside').exists()).toBe(true)
     expect(wrapper.find('main').exists()).toBe(true)
-    expect(wrapper.find('.log-console').exists()).toBe(true)
+    // The console section exists
+    expect(wrapper.find('section h3').text().toUpperCase()).toContain('TECHNICAL CONSOLE')
   })
 })
