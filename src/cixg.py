@@ -86,6 +86,11 @@ def generate_command(args):
                 print(f"  [ERROR] Failed to inject: {e}")
         print("-" * 20)
 
+def serve_command(args):
+    import uvicorn
+    print(f"Starting Web UI at http://{args.host}:{args.port}")
+    uvicorn.run("src.api.main:app", host=args.host, port=args.port, reload=False)
+
 def main():
     parser = argparse.ArgumentParser(description="ComicInfo.xml Generator (CIXG)")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -131,6 +136,12 @@ def main():
     gen_parser.add_argument("--manga", choices=["Yes", "No", "Unknown"], help="Manga")
 
     gen_parser.set_defaults(func=generate_command)
+
+    # Serve command
+    serve_parser = subparsers.add_parser("serve", help="Launch the Web UI server")
+    serve_parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
+    serve_parser.add_argument("--port", type=int, default=8000, help="Port to listen on")
+    serve_parser.set_defaults(func=serve_command)
 
     args = parser.parse_args()
     args.func(args)
