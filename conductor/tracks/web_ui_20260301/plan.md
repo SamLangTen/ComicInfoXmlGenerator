@@ -31,6 +31,6 @@
 
 ## Phase 5: Deployment & Integration
 - [x] Task: Refactor FastAPI to serve the compiled Vue static assets [b6c0fe8]
-- [~] Task: Add a new command to `src/cixg.py` to launch the web server (e.g., `python src/cixg.py serve`)
-- [ ] Task: Final visual polish and responsive testing (Tablet/Mobile)
+- [x] Task: Add a new command to `src/cixg.py` to launch the web server (e.g., `python src/cixg.py serve`) [d179898]
+- [~] Task: Final visual polish and responsive testing (Tablet/Mobile)
 - [ ] Task: Conductor - User Manual Verification 'Deployment & Integration' (Protocol in workflow.md)
