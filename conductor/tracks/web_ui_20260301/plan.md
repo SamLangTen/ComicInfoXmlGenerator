@@ -23,11 +23,11 @@
 - [x] Task: Implement real-time validation visual cues in the web form [49a9d6e]
 - [x] Task: Conductor - User Manual Verification 'Web-based Metadata Editor' (Protocol in workflow.md) [dd3f55b]
 
-## Phase 4: Batch Processing & Live Logs
+## Phase 4: Batch Processing & Live Logs [checkpoint: 258926a]
 - [x] Task: Implement the batch scraper trigger and global progress bar [7fcd0da]
 - [x] Task: Integrate WebSockets to display technical logs (LLM requests/responses) in the Log Console [7fcd0da]
 - [x] Task: Implement batch injection with individual success/error feedback [7fcd0da]
-- [~] Task: Conductor - User Manual Verification 'Batch Processing & Live Logs' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Batch Processing & Live Logs' (Protocol in workflow.md) [258926a]
 
 ## Phase 5: Deployment & Integration
 - [ ] Task: Refactor FastAPI to serve the compiled Vue static assets
