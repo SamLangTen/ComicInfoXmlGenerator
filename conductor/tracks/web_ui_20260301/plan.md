@@ -1,6 +1,6 @@
 # Implementation Plan: Web UI Implementation
 
-## Phase 1: Backend API Development (FastAPI)
+## Phase 1: Backend API Development (FastAPI) [checkpoint: a03aa7a]
 - [x] Task: Set up FastAPI environment, dependencies (`fastapi`, `uvicorn`), and basic app structure [86f0c0b]
 - [x] Task: Implement Configuration APIs (`GET/POST /api/config`) linked to `ConfigManager` [6e20df5]
 - [x] Task: Implement Scanning API (`POST /api/scan`) to return detected archives [09f0f9d]
@@ -8,7 +8,7 @@
 - [x] Task: Implement Scraper API (`POST /api/scrape`) with support for batching [72bfb4b]
 - [x] Task: Implement Injection API (`POST /api/inject`) to trigger archive writing [a8598b6]
 - [x] Task: Add WebSocket/SSE support for real-time scraper logs and progress [d087851]
-- [~] Task: Conductor - User Manual Verification 'Backend API Development' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Backend API Development' (Protocol in workflow.md) [a03aa7a]
 
 ## Phase 2: Frontend Setup & Layout (Vue 3 + TS)
 - [ ] Task: Scaffold Vue 3 project with Vite, TypeScript, and Tailwind CSS
