@@ -17,8 +17,8 @@
 - [x] Task: Conductor - User Manual Verification 'Frontend Setup & Layout' (Protocol in workflow.md) [21d0892]
 
 ## Phase 3: Web-based Metadata Editor
-- [ ] Task: Implement the file browser/list in the sidebar with multi-selection support
-- [ ] Task: Build the Tabbed Metadata Editor (General, Credits, Tags, Publishing)
+- [x] Task: Implement the file browser/list in the sidebar with multi-selection support [16c3e3d]
+- [~] Task: Build the Tabbed Metadata Editor (General, Credits, Tags, Publishing)
 - [ ] Task: Connect form fields to the Metadata APIs with auto-save to session cache
 - [ ] Task: Implement real-time validation visual cues in the web form
 - [ ] Task: Conductor - User Manual Verification 'Web-based Metadata Editor' (Protocol in workflow.md)
