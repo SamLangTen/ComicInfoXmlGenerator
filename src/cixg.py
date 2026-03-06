@@ -1,6 +1,12 @@
 import argparse
 import os
 import sys
+
+# Add project root to sys.path to allow absolute imports from 'src'
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 from src.scanner import scan_archives
 from src.scraper import LocalFilenameScraper, LlmFilenameScraper
 from src.comic_info import ComicInfo
