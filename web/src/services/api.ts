@@ -41,5 +41,20 @@ export const apiService = {
   async triggerInject(paths: string[]) {
     const response = await axios.post(`${API_BASE_URL}/inject`, { paths })
     return response.data
+  },
+
+  async getLibrarySeries() {
+    const response = await axios.get(`${API_BASE_URL}/library/series`)
+    return response.data
+  },
+
+  async triggerLibraryScan() {
+    const response = await axios.post(`${API_BASE_URL}/library/scan`)
+    return response.data
+  },
+
+  async getLibraryStatus() {
+    const response = await axios.get(`${API_BASE_URL}/library/status`)
+    return response.data
   }
 }

@@ -10,10 +10,24 @@ class ConfigManager:
             "llm_api_key": "",
             "llm_model": "gpt-4o-mini",
             "appearance_mode": "System",
-            "default_scraper": "Local"
+            "default_scraper": "Local",
+            "manga_root_directory": "",
+            "auto_scan_enabled": True,
+            "auto_scan_interval_minutes": 30,
+            "data_directory": "data" # Default to a local 'data' folder
         }
         self.config = self.defaults.copy()
         self.load()
+        self._ensure_data_dir()
+
+    def _ensure_data_dir(self):
+        data_dir = Path(self.get("data_directory"))
+        data_dir.mkdir(parents=True, exist_ok=True)
+        (data_dir / "cache" / "covers").mkdir(parents=True, exist_ok=True)
+
+    def get_data_path(self, sub_path: str) -> Path:
+        """Helper to get a path relative to the data directory."""
+        return Path(self.get("data_directory")) / sub_path
 
     def load(self):
         if self.config_path.exists():

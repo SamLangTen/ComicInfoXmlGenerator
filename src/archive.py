@@ -2,7 +2,53 @@ import zipfile
 import tempfile
 import shutil
 import os
+from typing import Optional
 from src.comic_info import ComicInfo
+
+def extract_cover_image(archive_path: str) -> Optional[bytes]:
+    """
+    Extracts the first image from the specified .cbz archive to use as a cover.
+    Returns the image bytes or None if no image is found.
+    """
+    if not os.path.exists(archive_path):
+        return None
+    
+    if not archive_path.lower().endswith('.cbz'):
+        return None
+        
+    valid_extensions = ('.jpg', '.jpeg', '.png', '.webp')
+    
+    try:
+        with zipfile.ZipFile(archive_path, 'r') as zin:
+            # Get all files and sort them to ensure we get the "first" page
+            files = sorted(zin.namelist())
+            for file_name in files:
+                if file_name.lower().endswith(valid_extensions) and not file_name.startswith('__MACOSX'):
+                    return zin.read(file_name)
+    except Exception as e:
+        print(f"Error extracting cover from {archive_path}: {e}")
+        
+    return None
+
+def read_comic_info_xml(archive_path: str) -> Optional[ComicInfo]:
+    """
+    Reads the ComicInfo.xml metadata from the specified .cbz archive.
+    """
+    if not os.path.exists(archive_path):
+        return None
+    
+    if not archive_path.lower().endswith('.cbz'):
+        return None
+    
+    try:
+        with zipfile.ZipFile(archive_path, 'r') as zin:
+            if 'ComicInfo.xml' in zin.namelist():
+                xml_content = zin.read('ComicInfo.xml').decode('utf-8')
+                return ComicInfo.from_xml_string(xml_content, path=archive_path)
+    except Exception as e:
+        print(f"Error reading ComicInfo.xml from {archive_path}: {e}")
+    
+    return None
 
 def inject_comic_info_xml(archive_path: str, comic: ComicInfo):
     """

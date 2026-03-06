@@ -11,12 +11,10 @@
 - **pathlib (Standard Library)**: Used for robust and recursive file system scanning and path manipulation.
 - **httpx**: Used for calling OpenAI-compatible APIs in `LlmFilenameScraper`.
 - **python-dotenv**: Used for managing API keys and configuration via `.env` files.
-- **customtkinter**: Modern, minimalist UI framework built on top of Tkinter.
-- **Pillow**: Used for image handling (comic covers).
+- **Pillow**: Used for image handling (comic covers and thumbnails).
 - **unittest & pytest**: Uses Python's standard `unittest` for test structure and `pytest` (with `pytest-cov`) for test execution and coverage reporting.
 
 ## UI Layer
-- **Desktop**: **customtkinter** – Modern, minimalist UI framework built on top of Tkinter.
 - **Web**: **Vue 3 + TypeScript** – Reactive, component-based frontend framework.
 - **Web Styling**: **Tailwind CSS** – Utility-first CSS framework for modern web design.
 - **Web Backend**: **FastAPI** – High-performance Python API framework for serving the Web UI and exposing core logic.

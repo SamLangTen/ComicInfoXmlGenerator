@@ -13,12 +13,14 @@ ComicInfoXmlGenerator is a tool designed to enhance comic archives (CBZ, CBR, CB
 
 ## Core Features
 - **Advanced Filenames & Metadata Scraping**: Extract comprehensive metadata from filenames using regex, directory context, and LLM parsing. Features a strict "verbatim extraction" policy to prevent hallucinations and provides full transparency via real-time request/response logging.
-- **Online Data Enrichment**: Connect to online comic databases to supplement local information with official metadata.
+- **Web-based Management Interface**: A modern, tabbed Web UI (ideal for NAS/remote hosting) that functions as a long-running background service. Features initial directory setup, automatic scanning, and comprehensive metadata management.
+- **Series Grouping & Organization**: Automatically group comics by `Series` using `ComicInfo.xml` metadata. Provides intelligent fallbacks (directory-based or similarity-based grouping) when metadata is missing.
 - **Powerful CLI for Automation**: Robust command-line interface with `scan` and `generate` commands for efficient directory processing, dry-run previews, and automated metadata injection.
-- **Professional Web & Desktop Interface**: A modern, tabbed Web UI (ideal for NAS/remote hosting) and desktop GUI. Features standard OS selection logic (Cmd/Ctrl+Click) for batch processing, comprehensive metadata fields, real-time validation, and live log streaming.
 - **Multi-format Support**: Native handling of CBZ (ZIP) archives for metadata injection, with planned support for CBR (RAR) and CB7 (7z).
 
 ## Design Goals
+- **Service-Oriented Architecture**: Designed to run 24/7 as a background process, maintaining an up-to-date view of the library.
+- **Intelligent Discovery**: Seamlessly discover and categorize new additions to the library without manual intervention.
 - **Clean & Minimalist UI**: A simple, fast interface that prioritizes workflow efficiency over visual clutter.
 - **Extensible Scraper Architecture**: Easily add new online sources and extraction rules for different naming conventions.
 - **Robust Schema Compliance**: Ensure generated XML files strictly adhere to the `ComicInfo.xsd` standard.

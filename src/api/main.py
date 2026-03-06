@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -7,13 +7,73 @@ from dataclasses import asdict
 import json
 import asyncio
 import os
+import hashlib
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
 from src.scraper import LocalFilenameScraper, LlmFilenameScraper
-from src.archive import inject_comic_info_xml
+from src.archive import inject_comic_info_xml, extract_cover_image
+from src.library_manager import library_manager
+from src.database import db_manager
 
 app = FastAPI(title="ComicInfoXmlGenerator API")
+
+@app.on_event("startup")
+async def startup_event():
+    # Initial library scan in background
+    asyncio.create_task(library_manager.scan())
+    # Start the auto-scan loop
+    library_manager.start_auto_scan()
+
+@app.get("/api/library/series")
+async def get_series():
+    return library_manager.get_series_list()
+
+@app.get("/api/cover")
+async def get_cover(path: str):
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Archive not found")
+    
+    # 1. Check Disk Cache
+    # Create a hash based on path and mtime to handle file updates
+    mtime = os.path.getmtime(path)
+    cache_key = hashlib.md5(f"{path}_{mtime}".encode()).hexdigest()
+    cache_path = config_manager.get_data_path(f"cache/covers/{cache_key}.jpg")
+    
+    if cache_path.exists():
+        return FileResponse(cache_path, media_type="image/jpeg")
+    
+    # 2. Extract and Cache
+    # Run extraction in a separate thread since it's blocking I/O
+    image_bytes = await asyncio.to_thread(extract_cover_image, path)
+    if not image_bytes:
+        raise HTTPException(status_code=404, detail="No cover found in archive")
+    
+    # Save to cache
+    try:
+        with open(cache_path, "wb") as f:
+            f.write(image_bytes)
+    except Exception as e:
+        print(f"Error saving cache: {e}")
+        
+    return Response(content=image_bytes, media_type="image/jpeg")
+
+@app.post("/api/library/scan")
+async def trigger_library_scan():
+    asyncio.create_task(library_manager.scan(
+        log_callback=lambda msg: manager.broadcast(msg)
+    ))
+    return {"status": "scanning"}
+
+@app.get("/api/library/status")
+async def get_library_status():
+    stats = db_manager.get_library_stats()
+    return {
+        "is_scanning": library_manager.is_scanning,
+        "manga_root": library_manager.manga_root,
+        "series_count": stats["series_count"],
+        "file_count": stats["archive_count"]
+    }
 
 # Serve Frontend Static Assets
 web_dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "web/dist")
@@ -58,6 +118,9 @@ class ConfigUpdate(BaseModel):
     llm_model: str = None
     appearance_mode: str = None
     default_scraper: str = None
+    manga_root_directory: str = None
+    auto_scan_enabled: bool = None
+    auto_scan_interval_minutes: int = None
 
 @app.get("/api/health")
 async def health_check():

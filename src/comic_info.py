@@ -120,20 +120,29 @@ class ComicInfo:
 
     @classmethod
     def from_xml(cls, element: ET.Element):
+        def get_int(tag, default=-1):
+            text = element.findtext(tag)
+            if text and text.isdigit():
+                return int(text)
+            try:
+                return int(text) if text else default
+            except (ValueError, TypeError):
+                return default
+
         return cls(
             Title=element.findtext("Title", ""),
             Series=element.findtext("Series", ""),
             Number=element.findtext("Number", ""),
-            Count=int(element.findtext("Count", -1)),
-            Volume=int(element.findtext("Volume", -1)),
+            Count=get_int("Count", -1),
+            Volume=get_int("Volume", -1),
             Summary=element.findtext("Summary", ""),
             Publisher=element.findtext("Publisher", ""),
             Genre=element.findtext("Genre", ""),
-            PageCount=int(element.findtext("PageCount", 0)),
+            PageCount=get_int("PageCount", 0),
             LanguageISO=element.findtext("LanguageISO", ""),
-            Year=int(element.findtext("Year", -1)),
-            Month=int(element.findtext("Month", -1)),
-            Day=int(element.findtext("Day", -1)),
+            Year=get_int("Year", -1),
+            Month=get_int("Month", -1),
+            Day=get_int("Day", -1),
             Writer=element.findtext("Writer", ""),
             Penciller=element.findtext("Penciller", ""),
             Inker=element.findtext("Inker", ""),
@@ -158,12 +167,12 @@ class ComicInfo:
             ],
         )
 
-    def to_xml_string(self) -> str:
-        return ET.tostring(self.to_xml(), encoding="utf-8").decode("utf-8")
-
     @classmethod
-    def from_xml_string(cls, xml_data: str):
-        return cls.from_xml(ET.fromstring(xml_data))
+    def from_xml_string(cls, xml_data: str, path: Optional[str] = None):
+        comic = cls.from_xml(ET.fromstring(xml_data))
+        if path:
+            comic.path = path
+        return comic
 
 
 def write_comic_info_xml(comic: ComicInfo, file_path: str):

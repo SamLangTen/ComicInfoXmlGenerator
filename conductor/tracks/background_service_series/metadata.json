@@ -1,0 +1,8 @@
+{
+  "id": "background_service_series",
+  "name": "Background Service & Series Management",
+  "description": "Background scanning and series-based library management for the Web UI.",
+  "status": "active",
+  "created_at": "2026-03-06",
+  "updated_at": "2026-03-06"
+}
