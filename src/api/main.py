@@ -11,7 +11,7 @@ import hashlib
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
-from src.scraper import LocalFilenameScraper, LlmFilenameScraper
+from src.scraper import LocalFilenameScraper, LlmFilenameScraper, BooksScraper
 from src.archive import inject_comic_info_xml, extract_cover_image
 from src.library_manager import library_manager
 from src.database import db_manager
@@ -148,7 +148,12 @@ async def scan(request: ScanRequest):
 @app.get("/api/metadata")
 async def get_metadata(path: str):
     if path not in session_cache:
-        session_cache[path] = ComicInfo(path=path)
+        # Try to load from DB first
+        cached = db_manager.get_archive(path)
+        if cached:
+            session_cache[path] = ComicInfo.from_dict(cached["metadata"])
+        else:
+            session_cache[path] = ComicInfo(path=path)
     return asdict(session_cache[path])
 
 @app.post("/api/metadata")
@@ -158,7 +163,11 @@ async def update_metadata(data: Dict[str, Any]):
         return {"status": "error", "message": "Path is required"}
     
     if path not in session_cache:
-        session_cache[path] = ComicInfo(path=path)
+        cached = db_manager.get_archive(path)
+        if cached:
+            session_cache[path] = ComicInfo.from_dict(cached["metadata"])
+        else:
+            session_cache[path] = ComicInfo(path=path)
     
     comic = session_cache[path]
     for key, value in data.items():
@@ -169,13 +178,22 @@ async def update_metadata(data: Dict[str, Any]):
 
 class ScrapeRequest(BaseModel):
     paths: List[str]
-    strategy: str # local, llm, regex
+    strategy: str # local, llm, regex, books
 
 @app.post("/api/scrape")
 async def scrape(request: ScrapeRequest):
-    # Log callback for the scraper
+    print(f"DEBUG: Scrape endpoint reached. Strategy: {request.strategy}, Paths: {len(request.paths)}")
+    
+    # Capture the current event loop to use in the thread-safe callback
+    loop = asyncio.get_running_loop()
+
+    # Log callback for the scraper (will be called from a worker thread)
     def api_log_callback(msg: str):
-        asyncio.create_task(manager.broadcast(msg))
+        print(f"SCRAPER LOG: {msg}")
+        # Safely schedule the broadcast on the main event loop
+        asyncio.run_coroutine_threadsafe(manager.broadcast(msg), loop)
+
+    await manager.broadcast(f"Starting scrape with strategy: {request.strategy}")
 
     if request.strategy.lower() == "llm":
         scraper = LlmFilenameScraper(
@@ -183,19 +201,34 @@ async def scrape(request: ScrapeRequest):
             base_url=config_manager.get("llm_base_url"),
             model=config_manager.get("llm_model")
         )
+    elif request.strategy.lower() == "books":
+        scraper = BooksScraper()
     else:
         scraper = LocalFilenameScraper()
     
-    # Get comics from cache
+    # Get comics from cache/DB
     comics_to_scrape = []
     for p in request.paths:
         if p not in session_cache:
-            session_cache[p] = ComicInfo(path=p)
+            cached = db_manager.get_archive(p)
+            if cached:
+                session_cache[p] = ComicInfo.from_dict(cached["metadata"])
+            else:
+                session_cache[p] = ComicInfo(path=p)
         comics_to_scrape.append(session_cache[p])
     
-    # Perform batch search
-    scraper.search_batch(comics_to_scrape, log_callback=api_log_callback)
+    print(f"DEBUG: Starting search_batch for {len(comics_to_scrape)} items")
+    # Perform batch search (This is sync, consider running in thread if blocking is an issue)
+    await asyncio.to_thread(scraper.search_batch, comics_to_scrape, api_log_callback)
     
+    print(f"DEBUG: search_batch completed")
+    # Update DB after scraping to persist results
+    for comic in comics_to_scrape:
+        if comic.path:
+            mtime = os.path.getmtime(comic.path)
+            db_manager.update_archive(comic.path, mtime, comic.Series, asdict(comic))
+    
+    await manager.broadcast("Scrape process completed successfully.")
     return {"status": "success"}
 
 class InjectRequest(BaseModel):

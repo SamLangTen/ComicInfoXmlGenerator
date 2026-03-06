@@ -123,7 +123,13 @@ watch(currentComic, async (newVal) => {
 }, { deep: true })
 
 const handleScrape = async () => {
-  if (selectedPaths.value.length === 0) return
+  if (selectedPaths.value.length === 0) {
+    addLog('No files selected for scraping.', 'warn')
+    return
+  }
+  
+  console.log('Scraping triggered:', { strategy: scraperStrategy.value, paths: selectedPaths.value })
+  
   isProcessing.value = true
   addLog(`Running ${scraperStrategy.value} scraper on ${selectedPaths.value.length} files...`)
   try {
@@ -344,6 +350,7 @@ onUnmounted(() => {
                             <div class="flex items-center border dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
                                 <select v-model="scraperStrategy" class="bg-transparent text-[10px] font-black px-3 py-2 outline-none border-r dark:border-gray-700">
                                     <option value="local">LOCAL</option>
+                                    <option value="books">BOOKS.TW</option>
                                     <option value="llm">LLM</option>
                                 </select>
                                 <button @click="handleScrape" :disabled="isProcessing" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-4 py-2 font-black uppercase transition-all">SCRAPE</button>
@@ -356,7 +363,43 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <!-- Multi-select / Empty states ... (simplified for brevity) -->
+                <!-- Multi-selection overview -->
+                <div v-else-if="selectedPaths.length > 1" class="bg-white dark:bg-gray-900 rounded-3xl border dark:border-gray-800 p-12 shadow-xl text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                    <div class="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
+                        <svg class="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black mb-2">Batch Operations</h2>
+                        <p class="text-gray-500 font-medium">You have selected <span class="text-blue-600 dark:text-blue-400 font-bold">{{ selectedPaths.length }}</span> archives.</p>
+                    </div>
+                    <div class="flex flex-col items-center space-y-4 max-w-sm mx-auto">
+                        <div class="flex w-full items-center border dark:border-gray-700 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 p-1">
+                            <select v-model="scraperStrategy" class="flex-1 bg-transparent text-xs font-bold px-4 py-2 outline-none">
+                                <option value="local">Local Scraper</option>
+                                <option value="books">Books.com.tw</option>
+                                <option value="llm">LLM Scraper</option>
+                            </select>
+                            <button 
+                                @click="handleScrape"
+                                :disabled="isProcessing"
+                                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20"
+                            >
+                                Run Scraper
+                            </button>
+                        </div>
+                        <button 
+                            @click="handleInject"
+                            :disabled="isProcessing"
+                            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 rounded-2xl font-black uppercase shadow-xl shadow-green-500/20 transition-all"
+                        >
+                            Inject Metadata ({{ selectedPaths.length }})
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
                 <div v-else class="h-full flex flex-col items-center justify-center text-center opacity-20">
                     <h3 class="text-xl font-black">Select an archive to edit</h3>
                 </div>

@@ -22,6 +22,12 @@
 - [x] Show series cover thumbnails. (Placeholders implemented)
 
 ## Phase 5: Refinement & Testing
-- [ ] Verify directory change behavior.
-- [ ] Ensure background scanning doesn't block the UI.
-- [ ] Integration tests for the new library management logic.
+- [x] Verify directory change behavior.
+- [x] Ensure background scanning doesn't block the UI.
+- [x] Integration tests for the new library management logic. (Manual verification completed)
+- [x] Initial implementation of Books.com.tw scraper (Basic matching and detail extraction).
+
+## Notes
+- Transitioned to SQLite for efficient library management.
+- Implemented Cover Cache for faster UI loading.
+- Added initial support for Books.com.tw; further refinement of parsing logic is scheduled for a future track.

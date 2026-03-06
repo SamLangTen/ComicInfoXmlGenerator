@@ -4,3 +4,4 @@ customtkinter
 Pillow
 fastapi
 uvicorn
+beautifulsoup4\nlxml

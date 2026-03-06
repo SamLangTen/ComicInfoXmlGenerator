@@ -174,6 +174,16 @@ class ComicInfo:
             comic.path = path
         return comic
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        # Handle the Pages list of dicts
+        pages_data = data.pop("Pages", [])
+        pages = [ComicPageInfo(**p) if isinstance(p, dict) else p for p in pages_data]
+        return cls(Pages=pages, **data)
+
+    def to_xml_string(self) -> str:
+        return ET.tostring(self.to_xml(), encoding="utf-8").decode("utf-8")
+
 
 def write_comic_info_xml(comic: ComicInfo, file_path: str):
     """Writes the ComicInfo object to an XML file at the specified path."""
