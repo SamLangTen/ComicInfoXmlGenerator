@@ -29,8 +29,8 @@
 - [x] Task: Implement batch injection with individual success/error feedback [7fcd0da]
 - [x] Task: Conductor - User Manual Verification 'Batch Processing & Live Logs' (Protocol in workflow.md) [258926a]
 
-## Phase 5: Deployment & Integration
+## Phase 5: Deployment & Integration [checkpoint: 673d3ed]
 - [x] Task: Refactor FastAPI to serve the compiled Vue static assets [b6c0fe8]
 - [x] Task: Add a new command to `src/cixg.py` to launch the web server (e.g., `python src/cixg.py serve`) [d179898]
 - [x] Task: Final visual polish and responsive testing (Tablet/Mobile) [4ac185e]
-- [~] Task: Conductor - User Manual Verification 'Deployment & Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Deployment & Integration' (Protocol in workflow.md) [673d3ed]
