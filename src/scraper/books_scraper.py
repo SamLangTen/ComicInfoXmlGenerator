@@ -51,11 +51,14 @@ class BooksScraper:
                 
                 # Enhanced selector for search results
                 result_link = None
-                # Method A: Standard list view
-                result_link = soup.select_one(".table-searchlist h4 a")
-                # Method B: Grid view or alternate mod
+                # New method: find the first result in the list
+                result_item = soup.select_one(".table-td")
+                if result_item:
+                    result_link = result_item.select_one("h4 a")
+                
+                # Fallback to old methods
                 if not result_link:
-                    result_link = soup.select_one(".mod_type02_m001 h4 a")
+                    result_link = soup.select_one(".table-searchlist h4 a") or soup.select_one(".mod_type02_m001 h4 a")
                 
                 if not result_link:
                     if log_callback: log_callback(f"[Books.tw] No results found in HTML for '{query}'")
@@ -87,51 +90,90 @@ class BooksScraper:
     def _extract_details(self, html: str, comic: ComicInfo, parser: str, log_callback: Optional[Callable[[str], None]] = None):
         soup = BeautifulSoup(html, parser)
 
-        # Title
+        # 1. Try JSON-LD first (Robust)
+        import json
+        json_ld = soup.find("script", type="application/ld+json")
+        if json_ld:
+            try:
+                data = json.loads(json_ld.string)
+                if data.get("@type") == "Book":
+                    if log_callback: log_callback("[Books.tw] Using JSON-LD data.")
+                    comic.Title = data.get("name", comic.Title)
+                    
+                    authors = data.get("author", [])
+                    if isinstance(authors, list) and authors:
+                        comic.Writer = authors[0].get("name", comic.Writer)
+                    elif isinstance(authors, dict):
+                        comic.Writer = authors.get("name", comic.Writer)
+                    
+                    publisher = data.get("publisher")
+                    if isinstance(publisher, list) and publisher:
+                        comic.Publisher = publisher[0].get("name", comic.Publisher)
+                    elif isinstance(publisher, dict):
+                        comic.Publisher = publisher.get("name", comic.Publisher)
+                    
+                    date_pub = data.get("datePublished")
+                    if date_pub:
+                        date_match = re.search(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})', date_pub)
+                        if date_match:
+                            comic.Year = int(date_match.group(1))
+                            comic.Month = int(date_match.group(2))
+                            comic.Day = int(date_match.group(3))
+            except Exception as e:
+                if log_callback: log_callback(f"[Books.tw] JSON-LD error: {str(e)}")
+
+        # 2. HTML Fallback / Supplement
+        # Title & Volume (if not set or needs refining)
         title_elem = soup.select_one(".mod_type02_m001 h1") or soup.select_one("h1")
         if title_elem:
             title_text = title_elem.get_text(strip=True)
-            if log_callback: log_callback(f"[Books.tw] Extracting data for: {title_text}")
             if not comic.Title: comic.Title = title_text
             
-            vol_match = re.search(r'(\d+)$', title_text)
-            if vol_match and comic.Volume == -1:
-                comic.Volume = int(vol_match.group(1))
-                if log_callback: log_callback(f"[Books.tw] Inferred Volume: {comic.Volume}")
+            # Extract volume from title if not already set
+            if comic.Volume == -1:
+                vol_match = re.search(r'(\d+)(?:\s*\(.*\))?$', title_text)
+                if vol_match:
+                    comic.Volume = int(vol_match.group(1))
 
-        # Author/Publisher/Date
-        info_block = soup.select_one(".type02_p003")
-        if info_block:
-            # Author
-            author_link = info_block.select_one('a[href*="adv_author"]')
-            if author_link:
-                author = author_link.get_text(strip=True)
-                comic.Writer = author
-                if log_callback: log_callback(f"[Books.tw] Author: {author}")
+        # Author/Publisher/Date (Fallback)
+        if not comic.Writer or not comic.Publisher or comic.Year == -1:
+            info_block = soup.select_one(".type02_p003")
+            if info_block:
+                if not comic.Writer:
+                    author_link = info_block.select_one('a[href*="adv_author"]')
+                    if author_link:
+                        comic.Writer = author_link.get_text(strip=True)
 
-            # Publisher
-            pub_link = info_block.select_one('a[href*="pubid"]')
-            if pub_link:
-                pub = pub_link.get_text(strip=True)
-                comic.Publisher = pub
-                if log_callback: log_callback(f"[Books.tw] Publisher: {pub}")
+                if not comic.Publisher:
+                    pub_link = info_block.select_one('a[href*="pubid"]')
+                    if pub_link:
+                        comic.Publisher = pub_link.get_text(strip=True)
 
-            # Date
-            text = info_block.get_text()
-            date_match = re.search(r'出版日期：(\d{4})/(\d{2})/(\d{2})', text)
-            if date_match:
-                comic.Year = int(date_match.group(1))
-                comic.Month = int(date_match.group(2))
-                comic.Day = int(date_match.group(3))
-                if log_callback: log_callback(f"[Books.tw] Date: {comic.Year}/{comic.Month}/{comic.Day}")
+                if comic.Year == -1:
+                    text = info_block.get_text()
+                    date_match = re.search(r'出版日期：(\d{4})/(\d{2})/(\d{2})', text)
+                    if date_match:
+                        comic.Year = int(date_match.group(1))
+                        comic.Month = int(date_match.group(2))
+                        comic.Day = int(date_match.group(3))
 
         # Summary
-        summary_elem = soup.select_one(".content") or soup.select_one(".mod_type02_m012")
+        # Use a more specific selector to avoid matching common class names in modals
+        summary_elem = soup.select_one(".mod_b.type02_m057 .content") or \
+                       soup.select_one(".mod_type02_m012 .content") or \
+                       soup.select_one(".content")
         if summary_elem:
             comic.Summary = summary_elem.get_text(strip=True)
-            if log_callback: log_callback(f"[Books.tw] Summary: {comic.Summary[:50]}...")
 
-        if log_callback: log_callback(f"[Books.tw] Successfully updated metadata.")
+        # Genre/Tags
+        # Books.com.tw categories: 心理勵志 > 勵志故事/散文 > 真實人生故事
+        sort_block = soup.select_one(".sort")
+        if sort_block:
+            categories = [a.get_text(strip=True) for a in sort_block.select("a")]
+            if categories:
+                comic.Genre = ",".join(categories)
+
+        if log_callback: log_callback(f"[Books.tw] Metadata extraction complete.")
 
     def search_batch(self, comics: List[ComicInfo], log_callback: Optional[Callable[[str], None]] = None) -> List[ComicInfo]:
         for comic in comics:
