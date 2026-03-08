@@ -127,7 +127,7 @@ class BooksScraper:
         title_elem = soup.select_one(".mod_type02_m001 h1") or soup.select_one("h1")
         if title_elem:
             title_text = title_elem.get_text(strip=True)
-            if not comic.Title: comic.Title = title_text
+            comic.Title = title_text # Update Title from detail page
             
             # Extract volume from title if not already set
             if comic.Volume == -1:
