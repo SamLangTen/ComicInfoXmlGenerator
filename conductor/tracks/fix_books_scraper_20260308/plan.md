@@ -27,9 +27,9 @@
     - [x] Verify Content Details extraction.
 - [x] Task: Conductor - User Manual Verification 'Fix Detail Page Extraction' (Protocol in workflow.md) 2320fcc
 
-## Phase 4: Error Handling and Integration
-- [ ] Task: Implement robust error handling for missing fields and unexpected HTML changes (e.g., using `Optional` and safe `get` methods).
-    - [ ] Write failing tests for various error/edge cases.
-    - [ ] Implement error handling logic.
-- [ ] Task: Run full test suite for `BooksScraper` and verify coverage meets 80% threshold.
-- [ ] Task: Conductor - User Manual Verification 'Error Handling and Integration' (Protocol in workflow.md)
+## Phase 4: Error Handling and Integration [checkpoint: 20c9612]
+- [x] Task: Implement robust error handling for missing fields and unexpected HTML changes (e.g., using `Optional` and safe `get` methods). 20c9612
+    - [x] Write failing tests for various error/edge cases.
+    - [x] Implement error handling logic.
+- [x] Task: Run full test suite for `BooksScraper` and verify coverage meets 80% threshold. 20c9612
+- [x] Task: Conductor - User Manual Verification 'Error Handling and Integration' (Protocol in workflow.md) 20c9612
