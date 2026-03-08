@@ -15,12 +15,10 @@ class TestBooksScraperFixed(unittest.TestCase):
 
     @patch("httpx.Client.get")
     def test_search_and_parse_fire_phoenix(self, mock_get):
-        # Mock search response
         mock_search_resp = MagicMock()
         mock_search_resp.status_code = 200
         mock_search_resp.text = self.search_html
         
-        # Mock detail response
         mock_detail_resp = MagicMock()
         mock_detail_resp.status_code = 200
         mock_detail_resp.text = self.detail_html
@@ -42,12 +40,10 @@ class TestBooksScraperFixed(unittest.TestCase):
 
     @patch("httpx.Client.get")
     def test_search_and_parse_frieren(self, mock_get):
-        # Mock search response
         mock_search_resp = MagicMock()
         mock_search_resp.status_code = 200
         mock_search_resp.text = self.search_html
         
-        # Mock detail response for Frieren 1
         mock_detail_resp = MagicMock()
         mock_detail_resp.status_code = 200
         mock_detail_resp.text = self.frieren_html
@@ -59,25 +55,40 @@ class TestBooksScraperFixed(unittest.TestCase):
 
         self.assertEqual(result.Title, "葬送的芙莉蓮 1")
         self.assertEqual(result.Volume, 1)
-        # Note: Depending on JSON-LD vs HTML, Writer might be formatted differently
-        # Let's check the frieren_1.html for exact author string if needed
         self.assertTrue("山田鐘人" in result.Writer or "山田 鐘人" in result.Writer)
         self.assertEqual(result.Publisher, "東立")
 
     @patch("httpx.Client.get")
     def test_search_404(self, mock_get):
-        # Mock search response 404
         mock_search_resp = MagicMock()
         mock_search_resp.status_code = 404
-        
         mock_get.return_value = mock_search_resp
-
         comic = ComicInfo(Title="不存在的書")
         result = self.scraper.search(comic)
-
-        # Should return the original comic object unchanged (except maybe logs)
         self.assertEqual(result.Title, "不存在的書")
+
+    @patch("httpx.Client.get")
+    def test_broken_html(self, mock_get):
+        # Mock search response
+        mock_search_resp = MagicMock()
+        mock_search_resp.status_code = 200
+        mock_search_resp.text = '<html><body><div class="table-td"><h4><a href="/test">Test</a></h4></div></body></html>'
+        
+        # Mock "broken" detail response (missing JSON-LD and expected HTML blocks)
+        mock_detail_resp = MagicMock()
+        mock_detail_resp.status_code = 200
+        mock_detail_resp.text = '<html><body><h1>Only Title</h1></body></html>'
+        
+        mock_get.side_effect = [mock_search_resp, mock_detail_resp]
+
+        comic = ComicInfo(Title="Test Query")
+        result = self.scraper.search(comic)
+
+        # Should still have the title from the broken page, but other fields empty
+        self.assertEqual(result.Title, "Only Title")
         self.assertEqual(result.Writer, "")
+        self.assertEqual(result.Publisher, "")
+        self.assertEqual(result.Year, -1)
 
 if __name__ == "__main__":
     unittest.main()
