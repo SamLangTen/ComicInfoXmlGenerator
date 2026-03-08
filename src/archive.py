@@ -19,13 +19,18 @@ try:
 except ImportError:
     py7zr = None
 
-def _get_supported_extensions():
+def get_supported_extensions():
+    """Returns a tuple of all supported file extensions (lowercase, including dot)."""
     exts = ['.cbz', '.zip']
     if rarfile:
         exts.extend(['.cbr', '.rar'])
     if py7zr:
         exts.extend(['.cb7', '.7z'])
     return tuple(exts)
+
+def is_supported_archive(path: str) -> bool:
+    """Checks if the given path has a supported archive extension."""
+    return path.lower().endswith(get_supported_extensions())
 
 def extract_cover_image(archive_path: str) -> Optional[bytes]:
     """

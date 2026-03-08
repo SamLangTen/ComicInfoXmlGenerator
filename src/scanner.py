@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
+from src.archive import get_supported_extensions
 
 def scan_archives(directory: str) -> list[str]:
     """
-    Recursively scan a directory for comic archive files (.cbz, .cbr, .cb7).
+    Recursively scan a directory for supported comic archive files.
     """
     path = Path(directory)
-    extensions = {'.cbz', '.cbr', '.cb7'}
+    extensions = set(get_supported_extensions())
     
     found_files = []
     for f in path.rglob('*'):
