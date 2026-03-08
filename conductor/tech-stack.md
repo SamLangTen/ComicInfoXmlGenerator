@@ -24,4 +24,5 @@
 ## Core Libraries & Frameworks
 
 - **zipfile (Standard Library)**: Used for robust metadata injection into CBZ archives.
-- **Proposed: tarfile and rarfile**: Future support for CBR and CB7 archive formats.
+- **rarfile**: Used for handling CBR (RAR) archives (supports RAR4 and RAR5).
+- **py7zr**: Used for handling CB7 (7z) archives.
