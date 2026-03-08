@@ -62,17 +62,19 @@ def extract_cover_image(archive_path: str) -> Optional[bytes]:
 
     # 3. 7z/CB7
     elif path_lower.endswith(('.cb7', '.7z')) and py7zr:
+        temp_dir = tempfile.mkdtemp()
         try:
             with py7zr.SevenZipFile(archive_path, mode='r') as sin:
-                # sin.getnames() returns a list of filenames
                 files = sorted(sin.getnames())
                 for file_name in files:
                     if file_name.lower().endswith(valid_image_exts):
-                        # py7zr.read returns a dict of {filename: BytesIO}
-                        data_dict = sin.read([file_name])
-                        return data_dict[file_name].read()
+                        sin.extract(targets=[file_name], path=temp_dir)
+                        with open(os.path.join(temp_dir, file_name), 'rb') as f:
+                            return f.read()
         except Exception as e:
             print(f"Error extracting cover from 7z {archive_path}: {e}")
+        finally:
+            shutil.rmtree(temp_dir)
         
     return None
 
@@ -107,14 +109,18 @@ def read_comic_info_xml(archive_path: str) -> Optional[ComicInfo]:
 
     # 3. 7z/CB7
     elif path_lower.endswith(('.cb7', '.7z')) and py7zr:
+        temp_dir = tempfile.mkdtemp()
         try:
             with py7zr.SevenZipFile(archive_path, mode='r') as sin:
                 if 'ComicInfo.xml' in sin.getnames():
-                    data_dict = sin.read(['ComicInfo.xml'])
-                    xml_content = data_dict['ComicInfo.xml'].read().decode('utf-8')
-                    return ComicInfo.from_xml_string(xml_content, path=archive_path)
+                    sin.extract(targets=['ComicInfo.xml'], path=temp_dir)
+                    with open(os.path.join(temp_dir, 'ComicInfo.xml'), 'r', encoding='utf-8') as f:
+                        xml_content = f.read()
+                        return ComicInfo.from_xml_string(xml_content, path=archive_path)
         except Exception as e:
             print(f"Error reading ComicInfo.xml from 7z {archive_path}: {e}")
+        finally:
+            shutil.rmtree(temp_dir)
     
     return None
 
