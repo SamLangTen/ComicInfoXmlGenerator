@@ -1,10 +1,10 @@
 # Implementation Plan: Enable CBR and CB7 Support
 
-## Phase 1: Environment and Dependencies
-- [ ] Task: Update `requirements.txt` with `rarfile` and `py7zr`.
-- [ ] Task: Update `conductor/tech-stack.md` to reflect the new libraries.
-- [ ] Task: Verify availability of `unrar` binary on the system (required for `rarfile` handling RAR5).
-- [ ] Task: Conductor - User Manual Verification 'Environment and Dependencies' (Protocol in workflow.md)
+## Phase 1: Environment and Dependencies [checkpoint: 167c8d1]
+- [x] Task: Update `requirements.txt` with `rarfile` and `py7zr`. 05accd7
+- [x] Task: Update `conductor/tech-stack.md` to reflect the new libraries. bdae3b1
+- [x] Task: Verify availability of `unrar` binary on the system (required for `rarfile` handling RAR5). (Installed via brew)
+- [x] Task: Conductor - User Manual Verification 'Environment and Dependencies' (Protocol in workflow.md) 167c8d1
 
 ## Phase 2: Core Archive Logic (CBR/RAR)
 - [ ] Task: Implement `read_comic_info_xml`, `inject_comic_info_xml`, and `extract_cover_image` for CBR files in `src/archive.py` using `rarfile`.
