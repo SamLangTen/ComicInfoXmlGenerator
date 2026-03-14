@@ -6,7 +6,7 @@
 - [x] Task: Implement the background worker logic to execute scraping tasks using existing scrapers. c145e87
 - [x] Task: Implement persistent task storage and recovery on application startup. fa4321a
 - [x] Task: Implement configurable retry logic with a maximum retry count. eb74674
-- [ ] Task: Conductor - User Manual Verification 'Task Management Engine' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Task Management Engine' (Protocol in workflow.md) d6cdca8
 
 ## Phase 2: API & Real-time Integration (Backend Communication)
 - [ ] Task: Implement FastAPI endpoints in `src/api/main.py` for task retrieval and management.
