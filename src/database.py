@@ -25,7 +25,89 @@ class DatabaseManager:
             """)
             # Index for fast series lookup
             conn.execute("CREATE INDEX IF NOT EXISTS idx_series ON archives(series_name)")
+
+            # Table for background tasks (e.g. scraping)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    target TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    payload TEXT,
+                    result TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_task_status ON tasks(status)")
             conn.commit()
+
+    def create_task(self, type: str, target: str, payload: Optional[Dict[str, Any]] = None) -> int:
+        """Creates a new background task and returns its ID."""
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                INSERT INTO tasks (type, target, status, payload)
+                VALUES (?, ?, 'pending', ?)
+            """, (type, target, json.dumps(payload) if payload else None))
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_task(self, task_id: int) -> Optional[Dict[str, Any]]:
+        """Retrieves a task by its ID."""
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT id, type, target, status, payload, result, created_at, updated_at
+                FROM tasks WHERE id = ?
+            """, (task_id,))
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "id": row[0],
+                    "type": row[1],
+                    "target": row[2],
+                    "status": row[3],
+                    "payload": json.loads(row[4]) if row[4] else None,
+                    "result": json.loads(row[5]) if row[5] else None,
+                    "created_at": row[6],
+                    "updated_at": row[7]
+                }
+        return None
+
+    def update_task_status(self, task_id: int, status: str, result: Optional[Dict[str, Any]] = None):
+        """Updates the status and optionally the result of a task."""
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE tasks 
+                SET status = ?, result = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (status, json.dumps(result) if result else None, task_id))
+            conn.commit()
+
+    def get_tasks(self, status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """Retrieves a list of tasks, optionally filtered by status."""
+        query = "SELECT id, type, target, status, payload, result, created_at, updated_at FROM tasks"
+        params = []
+        if status:
+            query += " WHERE status = ?"
+            params.append(status)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+
+        with self._get_connection() as conn:
+            cursor = conn.execute(query, params)
+            tasks = []
+            for row in cursor:
+                tasks.append({
+                    "id": row[0],
+                    "type": row[1],
+                    "target": row[2],
+                    "status": row[3],
+                    "payload": json.loads(row[4]) if row[4] else None,
+                    "result": json.loads(row[5]) if row[5] else None,
+                    "created_at": row[6],
+                    "updated_at": row[7]
+                })
+            return tasks
 
     def update_archive(self, path: str, mtime: float, series_name: str, metadata: Dict[str, Any]):
         with self._get_connection() as conn:
