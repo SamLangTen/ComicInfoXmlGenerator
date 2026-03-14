@@ -2,7 +2,7 @@
 
 ## Phase 1: Task Management Engine (Backend Foundation)
 - [x] Task: Define `Task` database model in `src/database.py` with states (Pending, Running, Completed, Failed). dd1b440
-- [ ] Task: Create a `TaskPool` manager in `src/task_manager.py` to handle queueing and worker lifecycle.
+- [x] Task: Create a `TaskPool` manager in `src/task_manager.py` to handle queueing and worker lifecycle. 63d86b2
 - [ ] Task: Implement the background worker logic to execute scraping tasks using existing scrapers.
 - [ ] Task: Implement persistent task storage and recovery on application startup.
 - [ ] Task: Implement configurable retry logic with a maximum retry count.
