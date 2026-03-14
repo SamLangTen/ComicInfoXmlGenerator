@@ -5,7 +5,7 @@
 - [x] Task: Create a `TaskPool` manager in `src/task_manager.py` to handle queueing and worker lifecycle. 63d86b2
 - [x] Task: Implement the background worker logic to execute scraping tasks using existing scrapers. c145e87
 - [x] Task: Implement persistent task storage and recovery on application startup. fa4321a
-- [ ] Task: Implement configurable retry logic with a maximum retry count.
+- [x] Task: Implement configurable retry logic with a maximum retry count. eb74674
 - [ ] Task: Conductor - User Manual Verification 'Task Management Engine' (Protocol in workflow.md)
 
 ## Phase 2: API & Real-time Integration (Backend Communication)
