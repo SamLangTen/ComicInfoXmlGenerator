@@ -35,6 +35,7 @@ class DatabaseManager:
                     status TEXT NOT NULL DEFAULT 'pending',
                     payload TEXT,
                     result TEXT,
+                    retries INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -56,7 +57,7 @@ class DatabaseManager:
         """Retrieves a task by its ID."""
         with self._get_connection() as conn:
             cursor = conn.execute("""
-                SELECT id, type, target, status, payload, result, created_at, updated_at
+                SELECT id, type, target, status, payload, result, retries, created_at, updated_at
                 FROM tasks WHERE id = ?
             """, (task_id,))
             row = cursor.fetchone()
@@ -68,8 +69,9 @@ class DatabaseManager:
                     "status": row[3],
                     "payload": json.loads(row[4]) if row[4] else None,
                     "result": json.loads(row[5]) if row[5] else None,
-                    "created_at": row[6],
-                    "updated_at": row[7]
+                    "retries": row[6],
+                    "created_at": row[7],
+                    "updated_at": row[8]
                 }
         return None
 
@@ -83,9 +85,18 @@ class DatabaseManager:
             """, (status, json.dumps(result) if result else None, task_id))
             conn.commit()
 
+    def increment_task_retries(self, task_id: int):
+        """Increments the retry count for a task."""
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE tasks SET retries = retries + 1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (task_id,))
+            conn.commit()
+
     def get_tasks(self, status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """Retrieves a list of tasks, optionally filtered by status."""
-        query = "SELECT id, type, target, status, payload, result, created_at, updated_at FROM tasks"
+        query = "SELECT id, type, target, status, payload, result, retries, created_at, updated_at FROM tasks"
         params = []
         if status:
             query += " WHERE status = ?"
@@ -104,8 +115,9 @@ class DatabaseManager:
                     "status": row[3],
                     "payload": json.loads(row[4]) if row[4] else None,
                     "result": json.loads(row[5]) if row[5] else None,
-                    "created_at": row[6],
-                    "updated_at": row[7]
+                    "retries": row[6],
+                    "created_at": row[7],
+                    "updated_at": row[8]
                 })
             return tasks
 

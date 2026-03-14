@@ -49,8 +49,9 @@ def scrape_task_handler(task: Dict[str, Any]):
     return {"status": "success", "series": comic.Series}
 
 class TaskPool:
-    def __init__(self, max_workers: int = 4, db_manager=None):
+    def __init__(self, max_workers: int = 4, db_manager=None, max_retries: int = 3):
         self.max_workers = max_workers
+        self.max_retries = max_retries
         self.db_manager = db_manager or database.db_manager
         self.workers: List[threading.Thread] = []
         self._stop_event = threading.Event()
@@ -122,7 +123,16 @@ class TaskPool:
                     self._process_task(task)
                 except Exception as e:
                     logger.exception(f"Error processing task {task['id']}: {e}")
-                    self.db_manager.update_task_status(task["id"], "failed", result={"error": str(e)})
+                    
+                    # Retry logic
+                    current_retries = task.get("retries", 0)
+                    if current_retries < self.max_retries:
+                        logger.info(f"Retrying task {task['id']} (attempt {current_retries + 1}/{self.max_retries})")
+                        self.db_manager.increment_task_retries(task["id"])
+                        self.db_manager.update_task_status(task["id"], "pending", result={"error": str(e)})
+                    else:
+                        logger.error(f"Task {task['id']} failed after {current_retries} retries")
+                        self.db_manager.update_task_status(task["id"], "failed", result={"error": str(e)})
                 finally:
                     with self._condition:
                         self._active_tasks -= 1

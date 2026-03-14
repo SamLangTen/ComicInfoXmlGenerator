@@ -146,6 +146,31 @@ class TestTaskManager(unittest.TestCase):
         self.assertEqual(task["status"], "pending")
         new_pool.stop()
 
+    def test_task_retry_logic(self):
+        fail_count = 0
+        def failing_handler(task):
+            nonlocal fail_count
+            fail_count += 1
+            raise ValueError("Intentional failure")
+            
+        self.task_pool.register_handler("scrape", failing_handler)
+        self.task_pool.max_retries = 2
+        
+        task_id = self.task_pool.submit("scrape", "/path/fail")
+        
+        # Wait for all retries to complete (3 attempts total: 0, 1, 2)
+        timeout = 5.0
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            task = self.db_manager.get_task(task_id)
+            if task["status"] == "failed":
+                break
+            time.sleep(0.1)
+            
+        self.assertEqual(task["status"], "failed")
+        self.assertEqual(task["retries"], 2)
+        self.assertEqual(fail_count, 3) # Original + 2 retries
+
     def test_init_task_pool(self):
         from src.task_manager import init_task_pool, task_pool
         # Reset global task_pool for testing
