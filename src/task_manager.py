@@ -2,23 +2,67 @@ import threading
 import time
 import json
 import logging
+import os
 from typing import List, Dict, Any, Optional, Callable
-from src.database import db_manager
+from src import database
+from src.comic_info import ComicInfo
+from src.scraper import LocalFilenameScraper, LlmFilenameScraper, BooksScraper
+from src.config_manager import config_manager
+from dataclasses import asdict
 
 logger = logging.getLogger(__name__)
 
+def scrape_task_handler(task: Dict[str, Any]):
+    """Handler for 'scrape' tasks."""
+    payload = task.get("payload") or {}
+    strategy = payload.get("strategy", "local")
+    path = task["target"]
+
+    logger.info(f"Starting scrape task {task['id']} for {path} using {strategy} strategy")
+
+    if strategy.lower() == "llm":
+        scraper = LlmFilenameScraper(
+            api_key=config_manager.get("llm_api_key"),
+            base_url=config_manager.get("llm_base_url"),
+            model=config_manager.get("llm_model")
+        )
+    elif strategy.lower() == "books":
+        scraper = BooksScraper()
+    else:
+        scraper = LocalFilenameScraper()
+
+    # 1. Load existing metadata from DB or create new
+    cached = database.db_manager.get_archive(path)
+    if cached:
+        comic = ComicInfo.from_dict(cached["metadata"])
+    else:
+        comic = ComicInfo(path=path)
+
+    # 2. Perform scrape
+    scraper.search(comic)
+
+    # 3. Update DB
+    if comic.path:
+        mtime = os.path.getmtime(comic.path)
+        database.db_manager.update_archive(comic.path, mtime, comic.Series, asdict(comic))
+
+    return {"status": "success", "series": comic.Series}
+
 class TaskPool:
-    def __init__(self, max_workers: int = 4, db_manager=db_manager):
+    def __init__(self, max_workers: int = 4, db_manager=None):
         self.max_workers = max_workers
-        self.db_manager = db_manager
+        self.db_manager = db_manager or database.db_manager
         self.workers: List[threading.Thread] = []
         self._stop_event = threading.Event()
         self._condition = threading.Condition()
         self._db_lock = threading.Lock()
         self._active_tasks = 0
-        self._task_handlers: Dict[str, Callable] = {}
-        
+        self._task_handlers: Dict[str, Callable] = {
+            "scrape": scrape_task_handler
+        }
+
         self._start_workers()
+
 
     def _start_workers(self):
         for i in range(self.max_workers):
