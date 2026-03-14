@@ -15,11 +15,14 @@ from src.scraper import LocalFilenameScraper, LlmFilenameScraper, BooksScraper
 from src.archive import inject_comic_info_xml, extract_cover_image
 from src.library_manager import library_manager
 from src.database import db_manager
+from src.task_manager import init_task_pool
 
 app = FastAPI(title="ComicInfoXmlGenerator API")
 
 @app.on_event("startup")
 async def startup_event():
+    # Initialize task pool
+    init_task_pool(max_workers=config_manager.get("max_workers") or 4)
     # Initial library scan in background
     asyncio.create_task(library_manager.scan())
     # Start the auto-scan loop
@@ -215,52 +218,20 @@ class ScrapeRequest(BaseModel):
 async def scrape(request: ScrapeRequest):
     print(f"DEBUG: Scrape endpoint reached. Strategy: {request.strategy}, Paths: {len(request.paths)}")
     
-    # Capture the current event loop to use in the thread-safe callback
-    loop = asyncio.get_running_loop()
+    from src.task_manager import task_pool
+    if not task_pool:
+        raise HTTPException(status_code=500, detail="Task pool not initialized")
 
-    # Log callback for the scraper (will be called from a worker thread)
-    def api_log_callback(msg: str):
-        print(f"SCRAPER LOG: {msg}")
-        # Safely schedule the broadcast on the main event loop
-        asyncio.run_coroutine_threadsafe(manager.broadcast(msg), loop)
-
-    await manager.broadcast(f"Starting scrape with strategy: {request.strategy}")
-
-    if request.strategy.lower() == "llm":
-        scraper = LlmFilenameScraper(
-            api_key=config_manager.get("llm_api_key"),
-            base_url=config_manager.get("llm_base_url"),
-            model=config_manager.get("llm_model")
+    task_ids = []
+    for path in request.paths:
+        task_id = task_pool.submit(
+            type="scrape",
+            target=path,
+            payload={"strategy": request.strategy}
         )
-    elif request.strategy.lower() == "books":
-        scraper = BooksScraper()
-    else:
-        scraper = LocalFilenameScraper()
+        task_ids.append(task_id)
     
-    # Get comics from cache/DB
-    comics_to_scrape = []
-    for p in request.paths:
-        if p not in session_cache:
-            cached = db_manager.get_archive(p)
-            if cached:
-                session_cache[p] = ComicInfo.from_dict(cached["metadata"])
-            else:
-                session_cache[p] = ComicInfo(path=p)
-        comics_to_scrape.append(session_cache[p])
-    
-    print(f"DEBUG: Starting search_batch for {len(comics_to_scrape)} items")
-    # Perform batch search (This is sync, consider running in thread if blocking is an issue)
-    await asyncio.to_thread(scraper.search_batch, comics_to_scrape, api_log_callback)
-    
-    print(f"DEBUG: search_batch completed")
-    # Update DB after scraping to persist results
-    for comic in comics_to_scrape:
-        if comic.path:
-            mtime = os.path.getmtime(comic.path)
-            db_manager.update_archive(comic.path, mtime, comic.Series, asdict(comic))
-    
-    await manager.broadcast("Scrape process completed successfully.")
-    return {"status": "success"}
+    return {"status": "success", "task_ids": task_ids}
 
 class InjectRequest(BaseModel):
     paths: List[str]
