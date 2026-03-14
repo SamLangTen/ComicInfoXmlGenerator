@@ -61,7 +61,15 @@ class TaskPool:
             "scrape": scrape_task_handler
         }
 
+        self._recover_tasks()
         self._start_workers()
+
+    def _recover_tasks(self):
+        """Resets 'running' tasks to 'pending' on startup."""
+        running = self.db_manager.get_tasks(status="running", limit=1000)
+        for task in running:
+            logger.info(f"Recovering interrupted task {task['id']} (resetting to pending)")
+            self.db_manager.update_task_status(task["id"], "pending")
 
 
     def _start_workers(self):

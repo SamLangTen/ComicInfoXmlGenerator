@@ -130,6 +130,22 @@ class TestTaskManager(unittest.TestCase):
         self.assertIsNotNone(archive)
         self.assertEqual(archive["series_name"], "Amazing Spider-Man") # Local scraper output
 
+    def test_task_recovery(self):
+        # Create a 'running' task manually in DB
+        task_id = self.db_manager.create_task("scrape", "/path/interrupted")
+        self.db_manager.update_task_status(task_id, "running")
+        
+        # Now init a new TaskPool, it should recover it
+        # But we need to make sure the workers don't pick it up too fast for the check
+        # So we'll stop the current pool first
+        self.task_pool.stop()
+        
+        new_pool = TaskPool(max_workers=0, db_manager=self.db_manager) # 0 workers to prevent execution
+        
+        task = self.db_manager.get_task(task_id)
+        self.assertEqual(task["status"], "pending")
+        new_pool.stop()
+
     def test_init_task_pool(self):
         from src.task_manager import init_task_pool, task_pool
         # Reset global task_pool for testing
