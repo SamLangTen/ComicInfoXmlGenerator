@@ -1,6 +1,6 @@
 # Implementation Plan: Parallel Scraping Task Pool
 
-## Phase 1: Task Management Engine (Backend Foundation)
+## Phase 1: Task Management Engine (Backend Foundation) [checkpoint: d6cdca8]
 - [x] Task: Define `Task` database model in `src/database.py` with states (Pending, Running, Completed, Failed). dd1b440
 - [x] Task: Create a `TaskPool` manager in `src/task_manager.py` to handle queueing and worker lifecycle. 63d86b2
 - [x] Task: Implement the background worker logic to execute scraping tasks using existing scrapers. c145e87
