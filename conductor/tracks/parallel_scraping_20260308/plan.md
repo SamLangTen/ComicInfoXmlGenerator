@@ -9,7 +9,7 @@
 - [x] Task: Conductor - User Manual Verification 'Task Management Engine' (Protocol in workflow.md) d6cdca8
 
 ## Phase 2: API & Real-time Integration (Backend Communication)
-- [ ] Task: Implement FastAPI endpoints in `src/api/main.py` for task retrieval and management.
+- [x] Task: Implement FastAPI endpoints in `src/api/main.py` for task retrieval and management. de2740d
 - [ ] Task: Update existing scraping endpoints to submit jobs to the `TaskPool` asynchronously.
 - [ ] Task: Integrate WebSocket broadcasting for task status and progress updates.
 - [ ] Task: Add configuration settings for `max_workers` and `retry_count` in `src/config.py`.
