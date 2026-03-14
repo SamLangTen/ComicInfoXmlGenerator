@@ -94,6 +94,12 @@ class DatabaseManager:
             """, (task_id,))
             conn.commit()
 
+    def delete_completed_tasks(self):
+        """Deletes all completed tasks from the database."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM tasks WHERE status = 'completed'")
+            conn.commit()
+
     def get_tasks(self, status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """Retrieves a list of tasks, optionally filtered by status."""
         query = "SELECT id, type, target, status, payload, result, retries, created_at, updated_at FROM tasks"

@@ -126,6 +126,37 @@ class ConfigUpdate(BaseModel):
 async def health_check():
     return {"status": "ok"}
 
+@app.get("/api/tasks")
+async def list_tasks(status: Optional[str] = None, limit: int = 100):
+    return db_manager.get_tasks(status=status, limit=limit)
+
+@app.get("/api/tasks/{task_id}")
+async def get_task(task_id: int):
+    task = db_manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+@app.post("/api/tasks/retry/{task_id}")
+async def retry_task(task_id: int):
+    task = db_manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    db_manager.update_task_status(task_id, "pending")
+    # Signal task pool (we'll need task_pool imported)
+    from src.task_manager import task_pool
+    if task_pool:
+        with task_pool._condition:
+            task_pool._condition.notify_all()
+            
+    return {"status": "success"}
+
+@app.delete("/api/tasks/completed")
+async def clear_completed_tasks():
+    db_manager.delete_completed_tasks()
+    return {"status": "success"}
+
 @app.get("/api/config")
 async def get_config():
     return config_manager.config
