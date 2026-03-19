@@ -13,3 +13,7 @@ def get_env(key: str, default: str = "") -> str:
 LLM_BASE_URL = config_manager.get("llm_base_url") or get_env("LLM_BASE_URL", "https://api.openai.com/v1")
 LLM_API_KEY = config_manager.get("llm_api_key") or get_env("LLM_API_KEY", "")
 LLM_MODEL = config_manager.get("llm_model") or get_env("LLM_MODEL", "gpt-4o-mini")
+
+# Task Pool Configuration
+MAX_WORKERS = int(config_manager.get("max_workers") or get_env("MAX_WORKERS", "4"))
+MAX_RETRIES = int(config_manager.get("max_retries") or get_env("MAX_RETRIES", "3"))

@@ -33,8 +33,10 @@ async def startup_event():
         asyncio.run_coroutine_threadsafe(manager.broadcast(message), loop)
 
     # Initialize task pool
+    from src.config import MAX_WORKERS, MAX_RETRIES
     init_task_pool(
-        max_workers=config_manager.get("max_workers") or 4,
+        max_workers=MAX_WORKERS,
+        max_retries=MAX_RETRIES,
         status_change_callback=task_status_change_callback
     )
     # Initial library scan in background
@@ -138,6 +140,8 @@ class ConfigUpdate(BaseModel):
     manga_root_directory: str = None
     auto_scan_enabled: bool = None
     auto_scan_interval_minutes: int = None
+    max_workers: int = None
+    max_retries: int = None
 
 @app.get("/api/health")
 async def health_check():

@@ -32,7 +32,9 @@ class TestAPIConfig(unittest.TestCase):
     def test_post_config(self):
         new_settings = {
             "llm_model": "gpt-test-model",
-            "appearance_mode": "Light"
+            "appearance_mode": "Light",
+            "max_workers": 8,
+            "max_retries": 5
         }
         response = self.client.post("/api/config", json=new_settings)
         self.assertEqual(response.status_code, 200)
@@ -41,6 +43,8 @@ class TestAPIConfig(unittest.TestCase):
         # Verify it updated in memory
         self.assertEqual(config_manager.get("llm_model"), "gpt-test-model")
         self.assertEqual(config_manager.get("appearance_mode"), "Light")
+        self.assertEqual(config_manager.get("max_workers"), 8)
+        self.assertEqual(config_manager.get("max_retries"), 5)
 
 if __name__ == "__main__":
     unittest.main()
