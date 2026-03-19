@@ -8,7 +8,7 @@
 - [x] Task: Implement configurable retry logic with a maximum retry count. eb74674
 - [x] Task: Conductor - User Manual Verification 'Task Management Engine' (Protocol in workflow.md) d6cdca8
 
-## Phase 2: API & Real-time Integration (Backend Communication)
+## Phase 2: API & Real-time Integration (Backend Communication) [checkpoint: a249633]
 - [x] Task: Implement FastAPI endpoints in `src/api/main.py` for task retrieval and management. de2740d
 - [x] Task: Update existing scraping endpoints to submit jobs to the `TaskPool` asynchronously. c245b2f
 - [x] Task: Integrate WebSocket broadcasting for task status and progress updates. d84c461
