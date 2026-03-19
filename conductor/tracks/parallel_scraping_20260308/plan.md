@@ -15,12 +15,12 @@
 - [x] Task: Add configuration settings for `max_workers` and `retry_count` in `src/config.py`. 64bad3c
 - [x] Task: Conductor - User Manual Verification 'API & Real-time Integration' (Protocol in workflow.md) f8c3912
 
-## Phase 3: Web UI - Tasks View & Management (Frontend Core)
-- [ ] Task: Create `TasksView.vue` to display the list of active, pending, and finished tasks.
-- [ ] Task: Add a new "Tasks" tab to the main navigation in `App.vue`.
-- [ ] Task: Implement task actions (Retry Failed, Clear Completed) in the UI.
-- [ ] Task: Create a reusable `ProgressBar` component for task monitoring.
-- [ ] Task: Conductor - User Manual Verification 'Web UI - Tasks View & Management' (Protocol in workflow.md)
+## Phase 3: Web UI - Tasks View & Management (Frontend Core) [checkpoint: 26b8691]
+- [x] Task: Create `TasksView.vue` to display the list of active, pending, and finished tasks.
+- [x] Task: Add a new "Tasks" tab to the main navigation in `App.vue`.
+- [x] Task: Implement task actions (Retry Failed, Clear Completed) in the UI.
+- [x] Task: Create a reusable `ProgressBar` component for task monitoring.
+- [x] Task: Conductor - User Manual Verification 'Web UI - Tasks View & Management' (Protocol in workflow.md) e2a6049
 
 ## Phase 4: Web UI - Inline Progress & Polish (Frontend Integration)
 - [ ] Task: Add inline progress indicators to `ArchiveList.vue` and `SeriesView.vue`.
