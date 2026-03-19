@@ -12,6 +12,7 @@
 - **httpx**: Used for calling OpenAI-compatible APIs in `LlmFilenameScraper`.
 - **python-dotenv**: Used for managing API keys and configuration via `.env` files.
 - **Pillow**: Used for image handling (comic covers and thumbnails).
+- **sqlite3 (Standard Library)**: Used for persistent storage of library metadata and background task queue.
 - **unittest & pytest**: Uses Python's standard `unittest` for test structure and `pytest` (with `pytest-cov`) for test execution and coverage reporting.
 
 ## UI Layer
