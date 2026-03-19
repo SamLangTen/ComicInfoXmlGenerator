@@ -22,12 +22,12 @@
 - [x] Task: Create a reusable `ProgressBar` component for task monitoring.
 - [x] Task: Conductor - User Manual Verification 'Web UI - Tasks View & Management' (Protocol in workflow.md) e2a6049
 
-## Phase 4: Web UI - Inline Progress & Polish (Frontend Integration)
-- [ ] Task: Add inline progress indicators to `ArchiveList.vue` and `SeriesView.vue`.
-- [ ] Task: Connect the frontend to the new Task WebSockets for live status updates.
-- [ ] Task: Add a visual indicator (e.g., a small badge with the active task count) to the Tasks tab.
-- [ ] Task: Final polish of UI/UX for task management.
-- [ ] Task: Conductor - User Manual Verification 'Web UI - Inline Progress & Polish' (Protocol in workflow.md)
+## Phase 4: Web UI - Inline Progress & Polish (Frontend Integration) [checkpoint: f86575d]
+- [x] Task: Add inline progress indicators to `ArchiveList.vue` and `SeriesView.vue`.
+- [x] Task: Connect the frontend to the new Task WebSockets for live status updates.
+- [x] Task: Add a visual indicator (e.g., a small badge with the active task count) to the Tasks tab.
+- [x] Task: Final polish of UI/UX for task management.
+- [x] Task: Conductor - User Manual Verification 'Web UI - Inline Progress & Polish' (Protocol in workflow.md) 82614b6
 
 ## Phase 5: Final Testing & Documentation
 - [ ] Task: Perform end-to-end integration testing for parallel scraping under load.
