@@ -2,7 +2,8 @@
 import { ref } from 'vue'
 
 const props = defineProps<{
-  files: string[]
+  files: string[],
+  activeTasks: Record<string, any>
 }>()
 
 const emit = defineEmits<{
@@ -37,7 +38,7 @@ const getBaseName = (path: string) => {
     <div
       v-for="file in props.files"
       :key="file"
-      class="file-item px-3 py-2 text-sm rounded cursor-pointer transition-colors duration-150 truncate"
+      class="file-item px-3 py-2 text-sm rounded cursor-pointer transition-colors duration-150 flex items-center justify-between"
       :class="[
         selectedPaths.has(file)
           ? 'bg-blue-600 text-white'
@@ -46,7 +47,10 @@ const getBaseName = (path: string) => {
       @click="toggleSelection($event, file)"
       :title="file"
     >
-      {{ getBaseName(file) }}
+      <span class="truncate">{{ getBaseName(file) }}</span>
+      <div v-if="props.activeTasks[file]" class="ml-2 shrink-0">
+        <div class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin opacity-60"></div>
+      </div>
     </div>
   </div>
 </template>

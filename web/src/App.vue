@@ -34,6 +34,9 @@ const currentComic = ref<any>(null)
 const logs = ref<{time: string, type: 'info' | 'error' | 'warn' | 'tech', msg: string}[]>([])
 const isProcessing = ref(false)
 const scraperStrategy = ref('local')
+const activeTasks = ref<Record<string, any>>({})
+
+const activeTaskCount = computed(() => Object.keys(activeTasks.value).length)
 
 const isSetupRequired = computed(() => !config.value.manga_root_directory)
 
@@ -52,6 +55,12 @@ const fetchStatus = async () => {
     if (config.value.manga_root_directory) {
       seriesList.value = await apiService.getLibrarySeries()
     }
+    // Fetch running tasks
+    const runningTasks = await apiService.getTasks('running')
+    activeTasks.value = {}
+    runningTasks.forEach((t: any) => {
+      activeTasks.value[t.target] = t
+    })
   } catch (err) {
     console.error('Failed to fetch status', err)
   }
@@ -184,6 +193,14 @@ const connectWebSocket = () => {
         if (tasksViewRef.value) {
           tasksViewRef.value.handleTaskUpdate(data.task)
         }
+        
+        // Update activeTasks map
+        if (data.task.status === 'running') {
+          activeTasks.value[data.task.target] = data.task
+        } else {
+          delete activeTasks.value[data.task.target]
+        }
+
         // If task completed, maybe refresh library status
         if (data.task.status === 'completed') {
           fetchStatus()
@@ -240,10 +257,13 @@ onUnmounted(() => {
           </button>
           <button 
             @click="activeTab = 'tasks'"
-            class="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+            class="px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center"
             :class="activeTab === 'tasks' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'"
           >
             Tasks
+            <span v-if="activeTaskCount > 0" class="ml-2 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-md animate-pulse">
+              {{ activeTaskCount }}
+            </span>
           </button>
           <button 
             @click="activeTab = 'settings'"
@@ -315,7 +335,7 @@ onUnmounted(() => {
                 </div>
             </header>
             
-            <SeriesView :seriesList="seriesList" @select-series="handleSelectSeries" />
+            <SeriesView :seriesList="seriesList" :activeTasks="activeTasks" @select-series="handleSelectSeries" />
             
             <div v-if="seriesList.length === 0 && !libraryStatus.is_scanning" class="flex flex-col items-center justify-center py-20 text-center opacity-30">
                 <svg class="w-20 h-20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -361,6 +381,7 @@ onUnmounted(() => {
             <ArchiveList 
               v-if="archives.length > 0"
               :files="archives" 
+              :activeTasks="activeTasks"
               @selection-changed="handleSelectionChanged"
             />
             <div v-else class="h-full flex flex-col items-center justify-center text-center p-8 opacity-20">

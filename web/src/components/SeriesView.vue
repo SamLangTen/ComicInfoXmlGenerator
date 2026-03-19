@@ -1,7 +1,13 @@
 <script setup lang="ts">
 const props = defineProps<{
-  seriesList: any[]
+  seriesList: any[],
+  activeTasks: Record<string, any>
 }>()
+
+const getActiveTaskCount = (series: any) => {
+  if (!series.paths) return 0
+  return series.paths.filter((p: string) => !!props.activeTasks[p]).length
+}
 
 const emit = defineEmits<{
   (e: 'select-series', series: any): void
@@ -48,6 +54,16 @@ const handleImageError = (e: Event) => {
         <!-- Badge for count -->
         <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-20 shadow-sm border border-white/10">
           {{ series.count }}
+        </div>
+
+        <!-- Active Tasks Indicator -->
+        <div v-if="getActiveTaskCount(series) > 0" class="absolute inset-0 bg-blue-600/20 backdrop-blur-[2px] z-15 flex items-center justify-center pointer-events-none">
+          <div class="bg-white dark:bg-gray-900 rounded-full p-2 shadow-xl animate-bounce">
+            <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div class="absolute bottom-2 left-2 bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-lg uppercase tracking-tighter">
+            Scraping {{ getActiveTaskCount(series) }}...
+          </div>
         </div>
       </div>
       
