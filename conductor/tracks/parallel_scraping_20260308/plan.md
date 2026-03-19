@@ -29,7 +29,7 @@
 - [x] Task: Final polish of UI/UX for task management.
 - [x] Task: Conductor - User Manual Verification 'Web UI - Inline Progress & Polish' (Protocol in workflow.md) 82614b6
 
-## Phase 5: Final Testing & Documentation
-- [ ] Task: Perform end-to-end integration testing for parallel scraping under load.
-- [ ] Task: Update documentation to reflect the new task-based scraping mechanism.
-- [ ] Task: Conductor - User Manual Verification 'Final Testing & Documentation' (Protocol in workflow.md)
+## Phase 5: Final Testing & Documentation [checkpoint: 5e5dc7a]
+- [x] Task: Perform end-to-end integration testing for parallel scraping under load.
+- [x] Task: Update documentation to reflect the new task-based scraping mechanism.
+- [x] Task: Conductor - User Manual Verification 'Final Testing & Documentation' (Protocol in workflow.md) 3aff8af
