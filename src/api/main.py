@@ -9,6 +9,7 @@ import asyncio
 import os
 import hashlib
 import sys
+import uvicorn
 from contextlib import asynccontextmanager
 
 # Add project root to sys.path to allow absolute imports from 'src'
@@ -111,11 +112,6 @@ async def get_library_status():
 # Serve Frontend Static Assets
 web_dist_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "web/dist")
 
-# ... existing cache and manager ...
-
-# In-memory session cache: path -> ComicInfo
-session_cache: Dict[str, ComicInfo] = {}
-
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -213,14 +209,14 @@ async def scan(request: ScanRequest):
 
 @app.get("/api/metadata")
 async def get_metadata(path: str):
-    if path not in session_cache:
-        # Try to load from DB first
-        cached = db_manager.get_archive(path)
-        if cached:
-            session_cache[path] = ComicInfo.from_dict(cached["metadata"])
-        else:
-            session_cache[path] = ComicInfo(path=path)
-    return asdict(session_cache[path])
+    # Always fetch from DB to reflect background task changes immediately
+    cached = db_manager.get_archive(path)
+    if cached:
+        return cached["metadata"]
+    else:
+        # Fallback to creating a new ComicInfo object
+        comic = ComicInfo(path=path)
+        return asdict(comic)
 
 @app.post("/api/metadata")
 async def update_metadata(data: Dict[str, Any]):
@@ -228,17 +224,21 @@ async def update_metadata(data: Dict[str, Any]):
     if not path:
         return {"status": "error", "message": "Path is required"}
     
-    if path not in session_cache:
-        cached = db_manager.get_archive(path)
-        if cached:
-            session_cache[path] = ComicInfo.from_dict(cached["metadata"])
-        else:
-            session_cache[path] = ComicInfo(path=path)
+    # Load current from DB
+    cached = db_manager.get_archive(path)
+    if cached:
+        comic = ComicInfo.from_dict(cached["metadata"])
+    else:
+        comic = ComicInfo(path=path)
     
-    comic = session_cache[path]
+    # Update fields
     for key, value in data.items():
         if hasattr(comic, key) and key != "path":
             setattr(comic, key, value)
+            
+    # Save back to DB immediately
+    mtime = os.path.getmtime(path) if os.path.exists(path) else 0.0
+    db_manager.update_archive(path, mtime, comic.Series, asdict(comic))
             
     return {"status": "success"}
 
@@ -272,12 +272,15 @@ class InjectRequest(BaseModel):
 async def inject(request: InjectRequest):
     results = {}
     for p in request.paths:
-        if p not in session_cache:
-            results[p] = "error: not in cache"
+        # Load fresh from DB
+        cached = db_manager.get_archive(p)
+        if not cached:
+            results[p] = "error: not found in library"
             continue
         
+        comic = ComicInfo.from_dict(cached["metadata"])
         try:
-            inject_comic_info_xml(p, session_cache[p])
+            inject_comic_info_xml(p, comic)
             results[p] = "success"
         except Exception as e:
             results[p] = f"error: {str(e)}"
@@ -296,3 +299,6 @@ if os.path.exists(web_dist_path):
         return FileResponse(os.path.join(web_dist_path, "index.html"))
 else:
     print(f"Warning: web/dist not found at {web_dist_path}. UI will not be served.")
+
+if __name__ == "__main__":
+    uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)
