@@ -147,9 +147,6 @@ const handleScrape = async () => {
   try {
     await apiService.triggerScrape(selectedPaths.value, scraperStrategy.value)
     addLog(`Scraping triggered successfully.`, 'info')
-    if (selectedPaths.value.length === 1 && selectedPaths.value[0]) {
-       currentComic.value = await apiService.getMetadata(selectedPaths.value[0])
-    }
   } catch (err: any) {
     addLog(`Error during scraping: ${err.message}`, 'error')
   } finally {
@@ -201,9 +198,14 @@ const connectWebSocket = () => {
           delete activeTasks.value[data.task.target]
         }
 
-        // If task completed, maybe refresh library status
+        // If task completed, refresh library status and current comic if it was the target
         if (data.task.status === 'completed') {
           fetchStatus()
+          
+          // If the completed task was for the currently selected comic, refresh its metadata
+          if (selectedPaths.value.length === 1 && selectedPaths.value[0] === data.task.target) {
+            handleSelectionChanged([data.task.target])
+          }
         }
         return
       }
