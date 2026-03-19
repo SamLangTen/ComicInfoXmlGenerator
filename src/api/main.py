@@ -21,8 +21,22 @@ app = FastAPI(title="ComicInfoXmlGenerator API")
 
 @app.on_event("startup")
 async def startup_event():
+    # Capture loop for thread-safe broadcasting
+    loop = asyncio.get_running_loop()
+
+    def task_status_change_callback(task: Dict[str, Any]):
+        message = json.dumps({
+            "event": "task_updated",
+            "task": task
+        })
+        # Schedule broadcast on the main event loop
+        asyncio.run_coroutine_threadsafe(manager.broadcast(message), loop)
+
     # Initialize task pool
-    init_task_pool(max_workers=config_manager.get("max_workers") or 4)
+    init_task_pool(
+        max_workers=config_manager.get("max_workers") or 4,
+        status_change_callback=task_status_change_callback
+    )
     # Initial library scan in background
     asyncio.create_task(library_manager.scan())
     # Start the auto-scan loop

@@ -49,10 +49,11 @@ def scrape_task_handler(task: Dict[str, Any]):
     return {"status": "success", "series": comic.Series}
 
 class TaskPool:
-    def __init__(self, max_workers: int = 4, db_manager=None, max_retries: int = 3):
+    def __init__(self, max_workers: int = 4, db_manager=None, max_retries: int = 3, status_change_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
         self.max_workers = max_workers
         self.max_retries = max_retries
         self.db_manager = db_manager or database.db_manager
+        self.status_change_callback = status_change_callback
         self.workers: List[threading.Thread] = []
         self._stop_event = threading.Event()
         self._condition = threading.Condition()
@@ -87,9 +88,20 @@ class TaskPool:
     def submit(self, type: str, target: str, payload: Optional[Dict[str, Any]] = None) -> int:
         """Submits a new task to the database and signals workers."""
         task_id = self.db_manager.create_task(type, target, payload)
+        self._notify_status_change(task_id)
         with self._condition:
             self._condition.notify_all()
         return task_id
+
+    def _notify_status_change(self, task_id: int):
+        """Notifies the callback about a task status change."""
+        if self.status_change_callback:
+            task = self.db_manager.get_task(task_id)
+            if task:
+                try:
+                    self.status_change_callback(task)
+                except Exception as e:
+                    logger.error(f"Error in status change callback: {e}")
 
     def stop(self):
         """Stops the task pool."""
@@ -114,6 +126,7 @@ class TaskPool:
                                 # Mark it as running immediately to prevent other workers from picking it up
                                 self.db_manager.update_task_status(task["id"], "running")
                                 self._active_tasks += 1
+                                self._notify_status_change(task["id"])
                                 break
                     
                     self._condition.wait(timeout=1.0)
@@ -121,6 +134,7 @@ class TaskPool:
             if task:
                 try:
                     self._process_task(task)
+                    self._notify_status_change(task["id"])
                 except Exception as e:
                     logger.exception(f"Error processing task {task['id']}: {e}")
                     
@@ -133,6 +147,8 @@ class TaskPool:
                     else:
                         logger.error(f"Task {task['id']} failed after {current_retries} retries")
                         self.db_manager.update_task_status(task["id"], "failed", result={"error": str(e)})
+                    
+                    self._notify_status_change(task["id"])
                 finally:
                     with self._condition:
                         self._active_tasks -= 1
@@ -150,8 +166,8 @@ class TaskPool:
 # Global singleton
 task_pool = None
 
-def init_task_pool(max_workers: int = 4):
+def init_task_pool(max_workers: int = 4, status_change_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
     global task_pool
     if task_pool is None:
-        task_pool = TaskPool(max_workers=max_workers)
+        task_pool = TaskPool(max_workers=max_workers, status_change_callback=status_change_callback)
     return task_pool

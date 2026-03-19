@@ -75,6 +75,32 @@ class TestAPITasks(unittest.TestCase):
         task = self.db_manager.get_task(task_id)
         self.assertEqual(task["status"], "pending")
 
+    def test_task_websocket_broadcasting(self):
+        import json
+        from src.task_manager import task_pool
+        # Ensure task_pool is reset and startup events run
+        import src.task_manager
+        src.task_manager.task_pool = None
+        
+        with TestClient(app) as client:
+            with client.websocket_connect("/api/logs") as websocket:
+                # 1. Submit a task via API, should trigger broadcast
+                response = client.post("/api/scrape", json={
+                    "paths": ["ws_test.cbz"],
+                    "strategy": "local"
+                })
+                self.assertEqual(response.status_code, 200)
+                
+                # Receive message from websocket
+                # We might get multiple messages (task_created, then maybe task_running very fast)
+                msg = websocket.receive_text()
+                data = json.loads(msg)
+                self.assertEqual(data["event"], "task_updated")
+                self.assertEqual(data["task"]["target"], "ws_test.cbz")
+                
+        # Clean up
+        src.task_manager.task_pool = None
+
     def test_clear_completed(self):
         t1 = self.db_manager.create_task("scrape", "1.cbz")
         self.db_manager.update_task_status(t1, "completed")
