@@ -11,3 +11,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Parallel Scraping Task Pool**
 *Link: [./tracks/parallel_scraping_20260308/](./tracks/parallel_scraping_20260308/)*
 
+---
+
+- [ ] **Track: Fix Scraper Integration & UI Metadata Sync**
+*Link: [./tracks/fix_scraping_and_sync_20260319/](./tracks/fix_scraping_and_sync_20260319/)*
+
