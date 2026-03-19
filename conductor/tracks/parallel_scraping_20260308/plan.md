@@ -11,7 +11,7 @@
 ## Phase 2: API & Real-time Integration (Backend Communication)
 - [x] Task: Implement FastAPI endpoints in `src/api/main.py` for task retrieval and management. de2740d
 - [x] Task: Update existing scraping endpoints to submit jobs to the `TaskPool` asynchronously. c245b2f
-- [ ] Task: Integrate WebSocket broadcasting for task status and progress updates.
+- [x] Task: Integrate WebSocket broadcasting for task status and progress updates. d84c461
 - [ ] Task: Add configuration settings for `max_workers` and `retry_count` in `src/config.py`.
 - [ ] Task: Conductor - User Manual Verification 'API & Real-time Integration' (Protocol in workflow.md)
 
