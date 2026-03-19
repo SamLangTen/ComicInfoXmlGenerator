@@ -8,6 +8,14 @@ import json
 import asyncio
 import os
 import hashlib
+import sys
+from contextlib import asynccontextmanager
+
+# Add project root to sys.path to allow absolute imports from 'src'
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 from src.config_manager import config_manager
 from src.scanner import scan_archives
 from src.comic_info import ComicInfo
@@ -17,10 +25,8 @@ from src.library_manager import library_manager
 from src.database import db_manager
 from src.task_manager import init_task_pool
 
-app = FastAPI(title="ComicInfoXmlGenerator API")
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     # Capture loop for thread-safe broadcasting
     loop = asyncio.get_running_loop()
 
@@ -34,7 +40,7 @@ async def startup_event():
 
     # Initialize task pool
     from src.config import MAX_WORKERS, MAX_RETRIES
-    init_task_pool(
+    pool = init_task_pool(
         max_workers=MAX_WORKERS,
         max_retries=MAX_RETRIES,
         status_change_callback=task_status_change_callback
@@ -43,6 +49,14 @@ async def startup_event():
     asyncio.create_task(library_manager.scan())
     # Start the auto-scan loop
     library_manager.start_auto_scan()
+    
+    yield
+    
+    # Clean up (stop the task pool)
+    if pool:
+        pool.stop()
+
+app = FastAPI(title="ComicInfoXmlGenerator API", lifespan=lifespan)
 
 @app.get("/api/library/series")
 async def get_series():
