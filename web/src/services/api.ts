@@ -56,5 +56,25 @@ export const apiService = {
   async getLibraryStatus() {
     const response = await axios.get(`${API_BASE_URL}/library/status`)
     return response.data
+  },
+
+  async getTasks(status?: string, limit: number = 100) {
+    const response = await axios.get(`${API_BASE_URL}/tasks`, { params: { status, limit } })
+    return response.data
+  },
+
+  async getTask(taskId: number) {
+    const response = await axios.get(`${API_BASE_URL}/tasks/${taskId}`)
+    return response.data
+  },
+
+  async retryTask(taskId: number) {
+    const response = await axios.post(`${API_BASE_URL}/tasks/retry/${taskId}`)
+    return response.data
+  },
+
+  async clearCompletedTasks() {
+    const response = await axios.delete(`${API_BASE_URL}/tasks/completed`)
+    return response.data
   }
 }

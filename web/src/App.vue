@@ -5,14 +5,17 @@ import { apiService } from './services/api'
 import ArchiveList from './components/ArchiveList.vue'
 import MetadataEditor from './components/MetadataEditor.vue'
 import SeriesView from './components/SeriesView.vue'
+import TasksView from './components/TasksView.vue'
 
 const route = useRoute()
 const router = useRouter()
 
+const tasksViewRef = ref<any>(null)
+
 const activeTab = computed({
   get: () => {
     const path = route.path.substring(1)
-    return (['library', 'editor', 'settings'].includes(path) ? path : 'library') as 'library' | 'editor' | 'settings'
+    return (['library', 'editor', 'tasks', 'settings'].includes(path) ? path : 'library') as 'library' | 'editor' | 'tasks' | 'settings'
   },
   set: (val) => {
     router.push(`/${val}`)
@@ -175,6 +178,22 @@ const connectWebSocket = () => {
   socket = new WebSocket(wsUrl)
   
   socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.event === 'task_updated') {
+        if (tasksViewRef.value) {
+          tasksViewRef.value.handleTaskUpdate(data.task)
+        }
+        // If task completed, maybe refresh library status
+        if (data.task.status === 'completed') {
+          fetchStatus()
+        }
+        return
+      }
+    } catch (e) {
+      // Not JSON, treat as raw log
+    }
+
     addLog(event.data, 'tech')
     // If it's a scan complete message, refresh library
     if (event.data.includes('Scan complete')) {
@@ -218,6 +237,13 @@ onUnmounted(() => {
             :class="activeTab === 'editor' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'"
           >
             Editor
+          </button>
+          <button 
+            @click="activeTab = 'tasks'"
+            class="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+            :class="activeTab === 'tasks' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'"
+          >
+            Tasks
           </button>
           <button 
             @click="activeTab = 'settings'"
@@ -298,6 +324,13 @@ onUnmounted(() => {
                 <p class="text-xl font-bold">No series found yet.</p>
                 <p class="text-sm">Try rescanning your library.</p>
             </div>
+        </div>
+      </main>
+
+      <!-- Tasks Tab -->
+      <main v-if="activeTab === 'tasks'" class="flex-1 overflow-y-auto p-10 custom-scrollbar">
+        <div class="max-w-7xl mx-auto">
+          <TasksView ref="tasksViewRef" />
         </div>
       </main>
 
