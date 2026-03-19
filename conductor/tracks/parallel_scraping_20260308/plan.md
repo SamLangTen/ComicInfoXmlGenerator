@@ -13,7 +13,7 @@
 - [x] Task: Update existing scraping endpoints to submit jobs to the `TaskPool` asynchronously. c245b2f
 - [x] Task: Integrate WebSocket broadcasting for task status and progress updates. d84c461
 - [x] Task: Add configuration settings for `max_workers` and `retry_count` in `src/config.py`. 64bad3c
-- [ ] Task: Conductor - User Manual Verification 'API & Real-time Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'API & Real-time Integration' (Protocol in workflow.md) f8c3912
 
 ## Phase 3: Web UI - Tasks View & Management (Frontend Core)
 - [ ] Task: Create `TasksView.vue` to display the list of active, pending, and finished tasks.
