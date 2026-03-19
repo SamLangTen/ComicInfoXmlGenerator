@@ -3,7 +3,14 @@ import time
 import json
 import logging
 import os
+import sys
 from typing import List, Dict, Any, Optional, Callable
+
+# Add project root to sys.path to allow absolute imports from 'src'
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 from src import database
 from src.comic_info import ComicInfo
 from src.scraper import LocalFilenameScraper, LlmFilenameScraper, BooksScraper
@@ -17,14 +24,28 @@ def scrape_task_handler(task: Dict[str, Any]):
     payload = task.get("payload") or {}
     strategy = payload.get("strategy", "local")
     path = task["target"]
+    
+    task_logs = []
+    def log_callback(msg: str):
+        task_logs.append(msg)
 
     logger.info(f"Starting scrape task {task['id']} for {path} using {strategy} strategy")
 
     if strategy.lower() == "llm":
+        # Get from config_manager or environment variables
+        # config_manager.get might return None if key doesn't exist, falling back to env
+        api_key = config_manager.get("llm_api_key") or os.environ.get("LLM_API_KEY")
+        base_url = config_manager.get("llm_base_url") or os.environ.get("LLM_BASE_URL")
+        model = config_manager.get("llm_model") or os.environ.get("LLM_MODEL")
+        
+        # Log configuration status (don't log actual keys)
+        if not api_key:
+            log_callback("[LLM] Warning: LLM_API_KEY is not set.")
+        
         scraper = LlmFilenameScraper(
-            api_key=config_manager.get("llm_api_key"),
-            base_url=config_manager.get("llm_base_url"),
-            model=config_manager.get("llm_model")
+            api_key=api_key,
+            base_url=base_url,
+            model=model
         )
     elif strategy.lower() == "books":
         scraper = BooksScraper()
@@ -39,14 +60,27 @@ def scrape_task_handler(task: Dict[str, Any]):
         comic = ComicInfo(path=path)
 
     # 2. Perform scrape
-    scraper.search(comic)
+    # For specialized scrapers, ensure we at least have some basic metadata from filename
+    if strategy.lower() != "local" and not (comic.Title or comic.Series):
+        log_callback(f"[System] Pre-populating metadata using LocalFilenameScraper")
+        LocalFilenameScraper().search(comic)
+
+    try:
+        scraper.search(comic, log_callback=log_callback)
+    except Exception as e:
+        log_callback(f"[Error] Scraper failure: {str(e)}")
+        logger.exception(f"Scraper error in task {task['id']}")
 
     # 3. Update DB
     if comic.path:
         mtime = os.path.getmtime(comic.path)
         database.db_manager.update_archive(comic.path, mtime, comic.Series, asdict(comic))
 
-    return {"status": "success", "series": comic.Series}
+    return {
+        "status": "success", 
+        "series": comic.Series,
+        "logs": "\n".join(task_logs)
+    }
 
 class TaskPool:
     def __init__(self, max_workers: int = 4, db_manager=None, max_retries: int = 3, status_change_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
@@ -166,8 +200,8 @@ class TaskPool:
 # Global singleton
 task_pool = None
 
-def init_task_pool(max_workers: int = 4, status_change_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
+def init_task_pool(max_workers: int = 4, max_retries: int = 3, status_change_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
     global task_pool
     if task_pool is None:
-        task_pool = TaskPool(max_workers=max_workers, status_change_callback=status_change_callback)
+        task_pool = TaskPool(max_workers=max_workers, max_retries=max_retries, status_change_callback=status_change_callback)
     return task_pool
