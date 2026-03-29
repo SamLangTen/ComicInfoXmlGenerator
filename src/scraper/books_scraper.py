@@ -13,18 +13,22 @@ class BooksScraper:
     Metadata scraper for Books.com.tw (博客來).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, debug: bool = False) -> None:
         self.base_url = "https://www.books.com.tw"
         self.search_url = "https://search.books.com.tw/search/query/key/{}/cat/all/v/1"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7"
         }
+        self.debug = debug
 
     def _log(self, message: str, log_callback: Optional[Callable[[str], None]] = None):
-        logger.info(message)
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        formatted_msg = f"[{timestamp}] {message}"
+        logger.info(formatted_msg)
         if log_callback:
-            log_callback(message)
+            log_callback(formatted_msg)
 
     def search(self, comic: ComicInfo, log_callback: Optional[Callable[[str], None]] = None) -> ComicInfo:
         # Use Title or Series as search keyword
@@ -107,6 +111,9 @@ class BooksScraper:
     def _extract_details(self, html: str, comic: ComicInfo, parser: str, log_callback: Optional[Callable[[str], None]] = None):
         soup = BeautifulSoup(html, parser)
 
+        if self.debug:
+            self._log(f"[Books.tw] [DEBUG] Detail HTML length: {len(html)}", log_callback)
+
         # 1. Try JSON-LD first (Robust)
         import json
         json_ld = soup.find("script", type="application/ld+json")
@@ -115,6 +122,9 @@ class BooksScraper:
                 data = json.loads(json_ld.string)
                 if data.get("@type") == "Book":
                     self._log("[Books.tw] Using JSON-LD data.", log_callback)
+                    if self.debug:
+                        self._log(f"[Books.tw] [DEBUG] JSON-LD Raw: {json.dumps(data, ensure_ascii=False)}", log_callback)
+                    
                     comic.Title = data.get("name", comic.Title)
                     
                     authors = data.get("author", [])
@@ -154,25 +164,52 @@ class BooksScraper:
 
         # Author/Publisher/Date (Fallback)
         if not comic.Writer or not comic.Publisher or comic.Year == -1:
-            info_block = soup.select_one(".type02_p003")
+            info_block = soup.select_one(".type02_p003") or soup.select_one(".mod_type02_m002")
             if info_block:
+                if self.debug:
+                    self._log(f"[Books.tw] [DEBUG] Info block found: {repr(info_block.get_text()[:200])}", log_callback)
+                else:
+                    self._log(f"[Books.tw] Info block found.", log_callback)
+                
+                text = info_block.get_text()
+                
                 if not comic.Writer:
+                    # Try to find author link first (precise)
                     author_link = info_block.select_one('a[href*="adv_author"]')
                     if author_link:
                         comic.Writer = author_link.get_text(strip=True)
-
+                    else:
+                        # Fallback to regex
+                        author_match = re.search(r'作者：\s*(.*?)(?:\s{2,}|譯者|出版社|新功能|$)', text)
+                        if author_match:
+                            comic.Writer = author_match.group(1).strip()
+                
                 if not comic.Publisher:
+                    # Try to find publisher link first
                     pub_link = info_block.select_one('a[href*="pubid"]')
                     if pub_link:
                         comic.Publisher = pub_link.get_text(strip=True)
+                    else:
+                        # Fallback to regex (handles 原文出版社 too)
+                        pub_match = re.search(r'(?:原文)?出版社：\s*(.*?)(?:\s{2,}|出版地區|新功能|$)', text)
+                        if pub_match:
+                            comic.Publisher = pub_match.group(1).strip()
 
                 if comic.Year == -1:
-                    text = info_block.get_text()
                     date_match = re.search(r'出版日期：(\d{4})/(\d{2})/(\d{2})', text)
                     if date_match:
                         comic.Year = int(date_match.group(1))
                         comic.Month = int(date_match.group(2))
                         comic.Day = int(date_match.group(3))
+            else:
+                self._log("[Books.tw] No info block found (.type02_p003 or .mod_type02_m002).", log_callback)
+
+        # 3. Global Fallback for Writer
+        if not comic.Writer:
+            author_link = soup.select_one('a[href*="adv_author"]')
+            if author_link:
+                self._log(f"[Books.tw] Writer found via global fallback: {author_link.get_text(strip=True)}", log_callback)
+                comic.Writer = author_link.get_text(strip=True)
 
         # Summary
         summary_elem = soup.select_one(".mod_b.type02_m057 .content") or \

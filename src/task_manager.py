@@ -48,7 +48,8 @@ def scrape_task_handler(task: Dict[str, Any]):
             model=model
         )
     elif strategy.lower() == "books":
-        scraper = BooksScraper()
+        debug = config_manager.get("scraper_debug") or os.environ.get("SCRAPER_DEBUG") == "true"
+        scraper = BooksScraper(debug=debug)
     else:
         scraper = LocalFilenameScraper()
 

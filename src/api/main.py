@@ -26,10 +26,33 @@ from src.library_manager import library_manager
 from src.database import db_manager
 from src.task_manager import init_task_pool
 
+import logging
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Capture loop for thread-safe broadcasting
     loop = asyncio.get_running_loop()
+
+    class WebSocketLogHandler(logging.Handler):
+        def emit(self, record):
+            try:
+                log_entry = self.format(record)
+                message = json.dumps({
+                    "event": "log",
+                    "message": log_entry
+                })
+                # Schedule broadcast on the main event loop
+                asyncio.run_coroutine_threadsafe(manager.broadcast(message), loop)
+            except Exception:
+                pass
+
+    # Add log handler
+    ws_handler = WebSocketLogHandler()
+    ws_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logging.getLogger().addHandler(ws_handler)
+    # Set root logger level to INFO if not set
+    if logging.getLogger().getEffectiveLevel() > logging.INFO:
+        logging.getLogger().setLevel(logging.INFO)
 
     def task_status_change_callback(task: Dict[str, Any]):
         message = json.dumps({
