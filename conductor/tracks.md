@@ -18,6 +18,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Books.com.tw Scraper Fix & Logging Enhancement**
+- [x] **Track: Books.com.tw Scraper Fix & Logging Enhancement** (6975d37)
 *Link: [./tracks/fix_books_scraper_logging_20260329/](./tracks/fix_books_scraper_logging_20260329/)*
 
