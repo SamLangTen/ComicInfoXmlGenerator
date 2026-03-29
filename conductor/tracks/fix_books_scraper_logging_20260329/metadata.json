@@ -1,8 +1,0 @@
-{
-  "track_id": "fix_books_scraper_logging_20260329",
-  "type": "bug",
-  "status": "new",
-  "created_at": "2026-03-29T10:00:00Z",
-  "updated_at": "2026-03-29T10:00:00Z",
-  "description": "好像博客来的爬虫又不行了，建议把他的日志都输出以便后续失效观察，另外排查一下失效原因"
-}
