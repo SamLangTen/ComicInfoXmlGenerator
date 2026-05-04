@@ -1,0 +1,97 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: GUI",
+            "type": "python",
+            "request": "launch",
+            "program": "gui/app.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: CLI Scan",
+            "type": "python",
+            "request": "launch",
+            "program": "src/cixg.py",
+            "args": [
+                "scan",
+                "${input:targetDirectory}"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: CLI Generate (Dry Run)",
+            "type": "python",
+            "request": "launch",
+            "program": "src/cixg.py",
+            "args": [
+                "generate",
+                "${input:targetDirectory}",
+                "--dry-run"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: API Server (FastAPI)",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "src.api.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000",
+                "--reload"
+            ],
+            "jinja": true,
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: Pytest Current File",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: Pytest All",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "test"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "targetDirectory",
+            "type": "promptString",
+            "description": "Enter the directory path to scan/process",
+            "default": "data"
+        }
+    ]
+}

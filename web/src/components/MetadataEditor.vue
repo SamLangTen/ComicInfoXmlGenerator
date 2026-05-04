@@ -111,7 +111,7 @@ const fieldGroups = {
               :id="field.key"
               :name="field.key"
               rows="6"
-              class="block w-full px-4 py-3 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none leading-relaxed"
+              class="block w-full px-4 py-3 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none leading-relaxed"
               placeholder="Enter summary..."
               :value="localComic[field.key]"
               @input="updateField(field.key, ($event.target as HTMLTextAreaElement).value)"
@@ -121,7 +121,7 @@ const fieldGroups = {
               <select
                 :id="field.key"
                 :name="field.key"
-                class="appearance-none block w-full px-4 py-2.5 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all pr-10"
+                class="appearance-none block w-full px-4 py-2.5 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all pr-10"
                 :value="localComic[field.key]"
                 @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
               >
@@ -139,7 +139,7 @@ const fieldGroups = {
               :id="field.key"
               :name="field.key"
               :type="field.type === 'number' ? 'text' : field.type"
-              class="block w-full px-4 py-2.5 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+              class="block w-full px-4 py-2.5 text-sm border rounded-xl dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
               :class="{ 'border-red-500 ring-2 ring-red-500/20 bg-red-50 dark:bg-red-900/10': field.type === 'number' && isInvalidNumber(field.key) }"
               :placeholder="'Enter ' + field.label.toLowerCase() + '...'"
               :value="localComic[field.key] === -1 ? '' : localComic[field.key]"

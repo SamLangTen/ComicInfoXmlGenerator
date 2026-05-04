@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiService } from './services/api'
 import ArchiveList from './components/ArchiveList.vue'
 import MetadataEditor from './components/MetadataEditor.vue'
-import SeriesView from './components/SeriesView.vue'
+import LibraryView from './components/LibraryView.vue'
 import TasksView from './components/TasksView.vue'
+import Modal from './components/Modal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,7 +26,6 @@ const activeTab = computed({
 const config = ref<any>({})
 const libraryStatus = ref<any>({})
 const seriesList = ref<any[]>([])
-const currentSeries = ref<any>(null)
 
 const directory = ref('')
 const archives = ref<string[]>([])
@@ -35,6 +35,9 @@ const logs = ref<{time: string, type: 'info' | 'error' | 'warn' | 'tech', msg: s
 const isProcessing = ref(false)
 const scraperStrategy = ref('local')
 const activeTasks = ref<Record<string, any>>({})
+
+const showEditorModal = ref(false)
+const isBatchMode = computed(() => selectedPaths.value.length > 1)
 
 const activeTaskCount = computed(() => Object.keys(activeTasks.value).length)
 
@@ -83,7 +86,6 @@ const handleLibraryScan = async () => {
   try {
     addLog('Triggering library scan...', 'info')
     await apiService.triggerLibraryScan()
-    // Poll for status or wait for WS
   } catch (err: any) {
     addLog(`Error scanning library: ${err.message}`, 'error')
   }
@@ -107,25 +109,22 @@ const handleSelectionChanged = async (paths: string[]) => {
     addLog(`Loading metadata: ${paths[0].split(/[\\/]/).pop()}`)
     try {
       currentComic.value = await apiService.getMetadata(paths[0])
+      showEditorModal.value = true
     } catch (err: any) {
       addLog(`Error loading metadata: ${err.message}`, 'error')
     }
+  } else if (paths.length > 1) {
+    currentComic.value = null
+    showEditorModal.value = true
   } else {
     currentComic.value = null
+    showEditorModal.value = false
   }
-}
-
-const handleSelectSeries = (series: any) => {
-    currentSeries.value = series
-    archives.value = series.paths
-    activeTab.value = 'editor'
-    selectedPaths.value = []
-    currentComic.value = null
 }
 
 // Auto-save metadata when it changes
 watch(currentComic, async (newVal) => {
-  if (newVal && selectedPaths.value.length === 1) {
+  if (newVal && selectedPaths.value.length === 1 && showEditorModal.value) {
     try {
       await apiService.updateMetadata(newVal)
     } catch (err: any) {
@@ -139,8 +138,6 @@ const handleScrape = async () => {
     addLog('No files selected for scraping.', 'warn')
     return
   }
-  
-  console.log('Scraping triggered:', { strategy: scraperStrategy.value, paths: selectedPaths.value })
   
   isProcessing.value = true
   addLog(`Running ${scraperStrategy.value} scraper on ${selectedPaths.value.length} files...`)
@@ -191,30 +188,25 @@ const connectWebSocket = () => {
           tasksViewRef.value.handleTaskUpdate(data.task)
         }
         
-        // Update activeTasks map
         if (data.task.status === 'running') {
           activeTasks.value[data.task.target] = data.task
         } else {
           delete activeTasks.value[data.task.target]
         }
 
-        // If task completed, refresh library status and current comic if it was the target
         if (data.task.status === 'completed') {
           fetchStatus()
-          
-          // If the completed task was for the currently selected comic, refresh its metadata
-          if (selectedPaths.value.length === 1 && selectedPaths.value[0] === data.task.target) {
-            handleSelectionChanged([data.task.target])
+          if (selectedPaths.value.length === 1 && selectedPaths.value[0] === data.task.target && showEditorModal.value) {
+            apiService.getMetadata(data.task.target).then(meta => {
+              currentComic.value = meta
+            })
           }
         }
         return
       }
-    } catch (e) {
-      // Not JSON, treat as raw log
-    }
+    } catch (e) {}
 
     addLog(event.data, 'tech')
-    // If it's a scan complete message, refresh library
     if (event.data.includes('Scan complete')) {
         fetchStatus()
     }
@@ -255,7 +247,7 @@ onUnmounted(() => {
             class="px-4 py-2 rounded-lg text-sm font-bold transition-all"
             :class="activeTab === 'editor' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'"
           >
-            Editor
+            Scan
           </button>
           <button 
             @click="activeTab = 'tasks'"
@@ -328,24 +320,15 @@ onUnmounted(() => {
       </div>
 
       <!-- Library Tab -->
-      <main v-if="activeTab === 'library'" class="flex-1 overflow-y-auto p-10 custom-scrollbar">
-        <div class="max-w-7xl mx-auto space-y-10">
-            <header class="flex justify-between items-end">
-                <div>
-                    <h2 class="text-4xl font-black tracking-tighter">Your Library</h2>
-                    <p class="text-gray-500 font-medium mt-2">{{ seriesList.length }} Series found in {{ libraryStatus.manga_root }}</p>
-                </div>
-            </header>
-            
-            <SeriesView :seriesList="seriesList" :activeTasks="activeTasks" @select-series="handleSelectSeries" />
-            
-            <div v-if="seriesList.length === 0 && !libraryStatus.is_scanning" class="flex flex-col items-center justify-center py-20 text-center opacity-30">
-                <svg class="w-20 h-20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <p class="text-xl font-bold">No series found yet.</p>
-                <p class="text-sm">Try rescanning your library.</p>
-            </div>
+      <main v-if="activeTab === 'library'" class="flex-1 p-10 overflow-hidden">
+        <div class="max-w-7xl mx-auto h-full">
+            <LibraryView 
+              :seriesList="seriesList" 
+              :activeTasks="activeTasks" 
+              :libraryStatus="libraryStatus"
+              @select-archive="(p) => handleSelectionChanged([p])"
+              @select-archives="handleSelectionChanged"
+            />
         </div>
       </main>
 
@@ -356,19 +339,12 @@ onUnmounted(() => {
         </div>
       </main>
 
-      <!-- Editor Tab -->
+      <!-- Scan/Manual Tab (Formerly Editor Tab) -->
       <div v-if="activeTab === 'editor'" class="flex-1 flex overflow-hidden">
         <!-- Sidebar -->
         <aside class="w-80 border-r bg-white dark:bg-gray-900 dark:border-gray-800 flex flex-col shrink-0">
           <div class="p-4 border-b dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <div v-if="currentSeries" class="mb-4">
-                <button @click="currentSeries = null; archives = []" class="text-[10px] font-bold text-blue-600 uppercase hover:underline mb-1 flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Back to Library
-                </button>
-                <h3 class="font-black text-sm truncate">{{ currentSeries.name }}</h3>
-            </div>
-            <div v-else class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2">
                 <input 
                     v-model="directory"
                     type="text" 
@@ -392,74 +368,10 @@ onUnmounted(() => {
           </div>
         </aside>
 
-        <!-- Main Editor -->
-        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            <div class="max-w-4xl mx-auto h-full">
-                <!-- Single selection editor -->
-                <div v-if="currentComic && selectedPaths.length === 1" class="bg-white dark:bg-gray-900 rounded-3xl border dark:border-gray-800 shadow-xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="px-8 py-6 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
-                        <div class="min-w-0">
-                            <h2 class="text-2xl font-black truncate">{{ currentComic.Title || 'Untitled' }}</h2>
-                            <p class="text-[10px] text-gray-400 font-mono mt-1 truncate">{{ selectedPaths[0] }}</p>
-                        </div>
-                        <div class="flex items-center space-x-3 shrink-0 ml-4">
-                            <div class="flex items-center border dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
-                                <select v-model="scraperStrategy" class="bg-transparent text-[10px] font-black px-3 py-2 outline-none border-r dark:border-gray-700">
-                                    <option value="local">LOCAL</option>
-                                    <option value="books">BOOKS.TW</option>
-                                    <option value="llm">LLM</option>
-                                </select>
-                                <button @click="handleScrape" :disabled="isProcessing" class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-4 py-2 font-black uppercase transition-all">SCRAPE</button>
-                            </div>
-                            <button @click="handleInject" :disabled="isProcessing" class="text-[10px] bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg shadow-green-500/20 transition-all">INJECT</button>
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <MetadataEditor v-model="currentComic" />
-                    </div>
-                </div>
-
-                <!-- Multi-selection overview -->
-                <div v-else-if="selectedPaths.length > 1" class="bg-white dark:bg-gray-900 rounded-3xl border dark:border-gray-800 p-12 shadow-xl text-center space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                    <div class="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
-                        <svg class="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-3xl font-black mb-2">Batch Operations</h2>
-                        <p class="text-gray-500 font-medium">You have selected <span class="text-blue-600 dark:text-blue-400 font-bold">{{ selectedPaths.length }}</span> archives.</p>
-                    </div>
-                    <div class="flex flex-col items-center space-y-4 max-w-sm mx-auto">
-                        <div class="flex w-full items-center border dark:border-gray-700 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-800 p-1">
-                            <select v-model="scraperStrategy" class="flex-1 bg-transparent text-xs font-bold px-4 py-2 outline-none">
-                                <option value="local">Local Scraper</option>
-                                <option value="books">Books.com.tw</option>
-                                <option value="llm">LLM Scraper</option>
-                            </select>
-                            <button 
-                                @click="handleScrape"
-                                :disabled="isProcessing"
-                                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20"
-                            >
-                                Run Scraper
-                            </button>
-                        </div>
-                        <button 
-                            @click="handleInject"
-                            :disabled="isProcessing"
-                            class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 rounded-2xl font-black uppercase shadow-xl shadow-green-500/20 transition-all"
-                        >
-                            Inject Metadata ({{ selectedPaths.length }})
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Empty state -->
-                <div v-else class="h-full flex flex-col items-center justify-center text-center opacity-20">
-                    <h3 class="text-xl font-black">Select an archive to edit</h3>
-                </div>
-            </div>
+        <!-- Empty state for Scan Tab -->
+        <main class="flex-1 flex flex-col items-center justify-center text-center opacity-20">
+            <h3 class="text-xl font-black">Select archives to start editing</h3>
+            <p class="mt-2 font-medium">Results will appear in a popup.</p>
         </main>
       </div>
 
@@ -554,13 +466,94 @@ onUnmounted(() => {
         </div>
       </section>
 
+      <!-- Editor Modal -->
+      <Modal 
+        :show="showEditorModal" 
+        @close="showEditorModal = false" 
+        :title="isBatchMode ? 'Batch Metadata Editor' : (currentComic ? currentComic.Title : 'Metadata Editor')"
+      >
+        <div class="flex flex-col h-full">
+            <!-- Modal Header (Controls) -->
+            <div class="px-8 py-4 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-800 flex justify-between items-center shrink-0">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center border dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
+                        <select v-model="scraperStrategy" class="bg-transparent text-[10px] font-black px-3 py-2 outline-none border-r dark:border-gray-700">
+                            <option value="local">LOCAL</option>
+                            <option value="books">BOOKS.TW</option>
+                            <option value="llm">LLM</option>
+                        </select>
+                        <button 
+                            @click="handleScrape" 
+                            :disabled="isProcessing" 
+                            class="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-4 py-2 font-black uppercase transition-all disabled:opacity-50"
+                        >
+                            SCRAPE
+                        </button>
+                    </div>
+                    <button 
+                        @click="handleInject" 
+                        :disabled="isProcessing" 
+                        class="text-[10px] bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-black uppercase shadow-lg shadow-green-500/20 transition-all disabled:opacity-50"
+                    >
+                        INJECT
+                    </button>
+                </div>
+                <div v-if="isBatchMode" class="text-xs font-bold text-gray-500">
+                    Editing <span class="text-blue-600">{{ selectedPaths.length }}</span> items
+                </div>
+                <div v-else-if="currentComic" class="text-[10px] font-mono text-gray-400 truncate max-w-xs">
+                    {{ selectedPaths[0] }}
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-8 flex-1 overflow-y-auto">
+                <div v-if="isBatchMode" class="space-y-8 py-10 text-center">
+                    <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto">
+                        <svg class="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-gray-100">Batch Operations</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">Metadata editing is only available for single items.</p>
+                        <p class="text-gray-500 dark:text-gray-400">Use the controls above to scrape or inject metadata for all selected items.</p>
+                    </div>
+                    <div class="max-w-md mx-auto bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 text-left">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Selected Files</h4>
+                        <ul class="text-[10px] font-mono space-y-1 max-h-40 overflow-y-auto custom-scrollbar text-gray-600 dark:text-gray-300">
+                            <li v-for="p in selectedPaths" :key="p" class="truncate">{{ p }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <MetadataEditor v-else-if="currentComic" v-model="currentComic" />
+            </div>
+        </div>
+      </Modal>
+
     </div>
   </div>
 </template>
 
 <style>
-/* Custom animations and scrollbars ... */
+/* Custom animations and scrollbars */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.2); border-radius: 10px; }
+
+.animate-in {
+  animation: animate-in 0.3s ease-out;
+}
+@keyframes animate-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in-from-right-4 {
+    animation: slide-in-right 0.3s ease-out;
+}
+@keyframes slide-in-right {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
 </style>
